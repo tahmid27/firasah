@@ -23,9 +23,11 @@ Practical implication: prioritize code and architecture that's **defensible and 
 
 Eight-phase build: Foundations → MVP → Agentic AI layer. Full roadmap lives in a separate tracker app outside this repo.
 
-**Current phase:** `[UPDATE THIS — e.g. "Phase 1: Foundations — setting up dbt project structure, no data sources connected yet"]`
+**Current phase:** `[UPDATE THIS — see note below on how this project is being learned/built]`
 
-Update this line at the start of any session where the phase has moved on, so the next session starts oriented correctly.
+**Learning approach:** dbt fundamentals are being learned and applied concurrently, not completed upfront. Expect requests to build things where the underlying concept was only just learned, or is being learned in the same session. When helping with dbt-related work, don't assume deep prior fluency — brief context on *why* a pattern is used (not just implementing it) is more valuable here than in a codebase where the fundamentals are already solid. This is intentional, not a gap to flag.
+
+Update this line at the start of any session where the phase or learning stage has moved on, so the next session starts oriented correctly. Example: `"Learned dbt staging models + sources this week — applying that now to the first JustGiving data source. Not yet covered: tests, snapshots, incremental models."`
 
 ## Conventions
 
