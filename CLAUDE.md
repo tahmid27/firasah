@@ -66,3 +66,9 @@ The person building this wants to genuinely understand the infrastructure they'r
 
 When a real architectural decision gets made, a phase completes, or the stack changes — update the relevant section above in the same session. Don't let this file drift out of sync with what's actually true of the codebase.
 
+## Session wrap-up
+
+Before ending a session where real progress was made, update the "Current
+phase" / learning-progress section above to reflect what was actually
+covered and built — don't wait to be asked if it's obviously out of date.
+
