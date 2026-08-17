@@ -1,0 +1,13 @@
+[project]
+name = "firasah"
+version = "0.1.0"
+description = "SaaS analytics platform for UK charities — fundraising and social data aggregation"
+authors = [
+    { name = "Tahmid", email = "tahmidnaser@hotmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "dbt-bigquery>=1.12.0",
+    "dbt-core>=1.12.2",
+    "fastapi>=0.141.1",
+]
