@@ -18,6 +18,11 @@ venv/
 dist/
 build/
 
+# dbt
+target/
+dbt_packages/
+logs/
+
 # Node
 node_modules/
 npm-debug.log*
