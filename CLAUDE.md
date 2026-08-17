@@ -56,6 +56,8 @@ The person building this wants to genuinely understand the infrastructure they'r
 
 **How to surface it:** end a meaningful chunk of work with a short "Worth understanding" callout — 2–4 bullet points max, plain language, no lecture. Not inline comments cluttering the code, and not a dense essay. If nothing in a given chunk clears the bar above, skip the callout entirely rather than padding it out.
 
+**Keep the language genuinely simple, not just short.** Most of this stack (dbt, BigQuery, uv, general backend/data infra) is being learned for the first time — write each bullet like you're explaining it to a smart friend with no background in that specific tool, not a peer engineer. Don't stack multiple unexplained technical terms in one sentence. If a technical term is needed, explain what it means in the same breath instead of assuming familiarity. A plain sentence that's slightly less precise beats a dense one that's exactly right but hard to follow. This isn't being saved for later study — it just needs to land in the moment.
+
 ## Not doing yet / explicitly deferred
 
 - Stripe integration — not until MVP phase
