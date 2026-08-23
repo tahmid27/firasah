@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: stg_justgiving_donations
+    description: Cleaned, typed donation records sourced from the JustGiving seed data.
+    columns:
+      - name: donation_id
+        description: Unique identifier for the donation, as provided by JustGiving.
+        tests:
+          - unique
+          - not_null
+
+      - name: donor_name
+        description: Full name of the donor.
+        tests:
+          - not_null
+
+      - name: amount_gbp
+        description: Donation amount in GBP.
+        tests:
+          - not_null
+
+      - name: donation_date
+        description: Date the donation was made.
+        tests:
+          - not_null
+
+      - name: campaign_name
+        description: Name of the fundraising campaign the donation was made to.
+        tests:
+          - not_null

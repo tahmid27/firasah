@@ -23,14 +23,24 @@ Practical implication: prioritize code and architecture that's **defensible and 
 
 Eight-phase build: Foundations → MVP → Agentic AI layer. Full roadmap lives in a separate tracker app outside this repo.
 
-**Current phase:** Foundations — Python environment set up with uv (Python 3.12, pyproject.toml + uv.lock). Core dependencies pinned: fastapi, dbt-core, dbt-bigquery. Bare-bones dbt project scaffolded at `dbt/` (profile `firasah`, BigQuery target `firasah-dev`/`firasah_dev` in europe-west2), connection verified via `dbt debug`. No models, app code, or Prefect flows yet — next step is either the first staging model (JustGiving) or first FastAPI routes.
+**Current phase:** Foundations — Python environment set up with uv (Python 3.12, pyproject.toml + uv.lock). Core dependencies pinned: fastapi, dbt-core, dbt-bigquery. dbt project at `dbt/` (profile `firasah`, BigQuery target `firasah-dev`/`firasah_dev` in europe-west2), connection verified via `dbt debug`. Note: `dbt` is uv-managed, not on PATH directly — invoke as `uv run dbt <command> --project-dir dbt --profiles-dir ~/.dbt` from repo root.
+
+First data pipeline slice built end to end: `dbt/seeds/justgiving_donations.csv` (28 rows of sample JustGiving donation data, deliberately raw/inconsistent column names) → `stg_justgiving_donations` staging model (`dbt/models/staging/justgiving/`, renames + casts types, materialized as a view via `+materialized: view` on the `staging` folder in `dbt_project.yml`) → schema tests (`not_null` on core columns, `unique` + `not_null` on `donation_id`). `dbt seed`, `dbt run`, `dbt test` all pass. No marts, no other sources, no app code, no Prefect flows yet — next step is either another source's staging model (LaunchGood, Instagram, etc.) or the first FastAPI routes.
 
 **Learning approach:** dbt Fundamentals course started but not finished
 (modules 1-2 done; 3, 4, 6 pending). Building ahead of course completion
 deliberately — Claude Code is expected to directly teach core dbt concepts
 during build sessions rather than assume course knowledge, then course
 modules get done afterward to consolidate/fill gaps, not as a gate before
-building.
+building. Covered so far in build sessions: seeds vs sources (seeds are
+loaded by dbt itself via `dbt seed` and referenced with `ref()`; sources
+are raw data landed by something outside dbt and referenced with
+`source()`), what a model is (a `.sql` file with a `SELECT`, compiled by
+dbt), materializations (view vs table), why staging models exist
+(rename/cast only, no business logic, one file per source table),
+and generic tests (`not_null`, `unique`) declared in schema `.yml` files.
+Not yet covered: snapshots, incremental models, intermediate/mart layers,
+packages, macros.
 
 Update this line at the start of any session where the phase or learning stage has moved on, so the next session starts oriented correctly. Example: `"Learned dbt staging models + sources this week — applying that now to the first JustGiving data source. Not yet covered: tests, snapshots, incremental models."`
 
