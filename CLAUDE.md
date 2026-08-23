@@ -25,7 +25,12 @@ Eight-phase build: Foundations → MVP → Agentic AI layer. Full roadmap lives 
 
 **Current phase:** Foundations — Python environment set up with uv (Python 3.12, pyproject.toml + uv.lock). Core dependencies pinned: fastapi, dbt-core, dbt-bigquery. Bare-bones dbt project scaffolded at `dbt/` (profile `firasah`, BigQuery target `firasah-dev`/`firasah_dev` in europe-west2), connection verified via `dbt debug`. No models, app code, or Prefect flows yet — next step is either the first staging model (JustGiving) or first FastAPI routes.
 
-**Learning approach:** dbt fundamentals are being learned and applied concurrently, not completed upfront. Expect requests to build things where the underlying concept was only just learned, or is being learned in the same session. When helping with dbt-related work, don't assume deep prior fluency — brief context on *why* a pattern is used (not just implementing it) is more valuable here than in a codebase where the fundamentals are already solid. This is intentional, not a gap to flag.
+**Learning approach:** dbt Fundamentals course started but not finished
+(modules 1-2 done; 3, 4, 6 pending). Building ahead of course completion
+deliberately — Claude Code is expected to directly teach core dbt concepts
+during build sessions rather than assume course knowledge, then course
+modules get done afterward to consolidate/fill gaps, not as a gate before
+building.
 
 Update this line at the start of any session where the phase or learning stage has moved on, so the next session starts oriented correctly. Example: `"Learned dbt staging models + sources this week — applying that now to the first JustGiving data source. Not yet covered: tests, snapshots, incremental models."`
 
