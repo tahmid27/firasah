@@ -19,59 +19,157 @@ Practical implication: prioritize code and architecture that's **defensible and 
 - **Billing:** Stripe
 - **Infra:** Docker, GCP Cloud Run
 
-## Roadmap
+## Environment & setup notes
 
-Eight-phase build: Foundations → MVP → Agentic AI layer. Full roadmap lives in a separate tracker app outside this repo.
+Operational specifics worth knowing before running anything — these are easy to rediscover the hard way if this section goes stale:
 
-**Current phase:** Foundations — Python environment set up with uv (Python 3.12, pyproject.toml + uv.lock). Core dependencies pinned: fastapi, dbt-core, dbt-bigquery. dbt project at `dbt/` (profile `firasah`, BigQuery target `firasah-dev`/`firasah_dev` in europe-west2), connection verified via `dbt debug`. Note: `dbt` is uv-managed, not on PATH directly — invoke as `uv run dbt <command> --project-dir dbt --profiles-dir ~/.dbt` from repo root.
-
-First data pipeline slice built end to end: `dbt/seeds/justgiving_donations.csv` (28 rows of sample JustGiving donation data, deliberately raw/inconsistent column names) → `stg_justgiving_donations` staging model (`dbt/models/staging/justgiving/`, renames + casts types, materialized as a view via `+materialized: view` on the `staging` folder in `dbt_project.yml`) → schema tests (`not_null` on core columns, `unique` + `not_null` on `donation_id`). `dbt seed`, `dbt run`, `dbt test` all pass. No marts, no other sources, no app code, no Prefect flows yet — next step is either another source's staging model (LaunchGood, Instagram, etc.) or the first FastAPI routes.
-
-**Learning approach:** dbt Fundamentals course started but not finished
-(modules 1-2 done; 3, 4, 6 pending). Building ahead of course completion
-deliberately — Claude Code is expected to directly teach core dbt concepts
-during build sessions rather than assume course knowledge, then course
-modules get done afterward to consolidate/fill gaps, not as a gate before
-building. Covered so far in build sessions: seeds vs sources (seeds are
-loaded by dbt itself via `dbt seed` and referenced with `ref()`; sources
-are raw data landed by something outside dbt and referenced with
-`source()`), what a model is (a `.sql` file with a `SELECT`, compiled by
-dbt), materializations (view vs table), why staging models exist
-(rename/cast only, no business logic, one file per source table),
-and generic tests (`not_null`, `unique`) declared in schema `.yml` files.
-Not yet covered: snapshots, incremental models, intermediate/mart layers,
-packages, macros.
-
-Update this line at the start of any session where the phase or learning stage has moved on, so the next session starts oriented correctly. Example: `"Learned dbt staging models + sources this week — applying that now to the first JustGiving data source. Not yet covered: tests, snapshots, incremental models."`
+- **Python:** 3.12, managed via `uv`. Dependencies pinned in `pyproject.toml` + `uv.lock`. Core deps so far: `fastapi`, `dbt-core`, `dbt-bigquery`.
+- **dbt is uv-managed, not on PATH directly.** Invoke it as:
+  `uv run dbt <command> --project-dir dbt --profiles-dir ~/.dbt`
+  from the repo root — plain `dbt <command>` won't work.
+- **dbt project lives at `dbt/`** (a subfolder, not repo root).
+- **BigQuery connection:** profile name `firasah`, target project `firasah-dev`, dataset `firasah_dev`, region `europe-west2`. Connection verified via `dbt debug`.
+- **Credentials:** GCP service account key sits in `credentials/` (gitignored as a whole folder, not by filename).
 
 ## Conventions
 
 - **Commits:** Conventional commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`). Every session ends in a real commit — even an unfinished feature gets committed with a clear message, not left dangling locally.
 - **Naming:** kebab-case for files, branches, and the repo itself.
-- **Gitignore:** Python + Node coverage — `.env`, `__pycache__`, `node_modules`, `.idea`, `.vscode` — already in place; keep it current as new tooling gets added.
-- **Scope discipline:** stay inside the current phase. Don't pull forward work from later phases (e.g. don't wire up Stripe during the Foundations phase) unless explicitly asked.
+- **Gitignore:** Python + Node coverage — `.env`, `__pycache__`, `node_modules`, `.idea`, `.vscode`, `credentials/` — already in place; keep it current as new tooling gets added.
+- **Scope discipline:** work top-down through the roadmap below. Don't pull work forward from a later phase unless explicitly asked — even if it seems related or easy.
 
 ## Learning & explanation preferences
 
 The person building this wants to genuinely understand the infrastructure they're shipping — this project is proof of skill, not just proof of output — but has a limited weekly learning budget and doesn't want to burn it memorizing boilerplate or syntax that carries no transferable understanding.
 
-**When generating non-trivial code, flag what's actually worth understanding versus what's just implementation detail.** Concretely:
+**When generating non-trivial code, flag what's actually worth understanding versus what's just implementation detail.**
 
 **Worth flagging (call these out explicitly, briefly):**
 - Architectural decisions and *why* one approach was chosen over an alternative (e.g. why a staging/intermediate/mart layering in dbt, why Prefect handles retries a certain way, why an endpoint is structured a particular way)
-- Design patterns that will recur elsewhere in the codebase or come up in interviews (auth flow logic, pipeline orchestration structure, data modeling choices, API design decisions)
+- Design patterns that will recur elsewhere or come up in interviews (auth flow logic, pipeline orchestration structure, data modeling choices, API design decisions)
 - Anything that trades off cost, performance, or maintainability in a way a technical interviewer might probe
 - Non-obvious gotchas specific to this stack (BigQuery quirks, dbt materialization choices, Supabase auth edge cases)
 
-**Not worth flagging (skip silently, no need to explain):**
+**Not worth flagging (skip silently):**
 - Standard library usage, common syntax, boilerplate CRUD
-- Repetitive config or scaffolding that follows a pattern already established once
+- Repetitive config/scaffolding following a pattern already established once
 - Verbose type hints or framework conventions that are just "how FastAPI/Next.js expects things structured"
 - Anything where understanding it wouldn't transfer to a different tool or a job interview
 
-**How to surface it:** end a meaningful chunk of work with a short "Worth understanding" callout — 2–4 bullet points max, plain language, no lecture. Not inline comments cluttering the code, and not a dense essay. If nothing in a given chunk clears the bar above, skip the callout entirely rather than padding it out.
+**How to surface it:** end a meaningful chunk of work with a short "Worth understanding" callout — 2–4 bullet points max, plain language, no lecture. Not inline comments cluttering the code. If nothing in a chunk clears the bar, skip the callout entirely.
 
-**Keep the language genuinely simple, not just short.** Most of this stack (dbt, BigQuery, uv, general backend/data infra) is being learned for the first time — write each bullet like you're explaining it to a smart friend with no background in that specific tool, not a peer engineer. Don't stack multiple unexplained technical terms in one sentence. If a technical term is needed, explain what it means in the same breath instead of assuming familiarity. A plain sentence that's slightly less precise beats a dense one that's exactly right but hard to follow. This isn't being saved for later study — it just needs to land in the moment.
+**Keep the language genuinely simple, not just short.** Most of this stack (dbt, BigQuery, uv, general backend/data infra) is being learned for the first time — write each bullet like explaining it to a smart friend with no background in that specific tool, not a peer engineer. Don't stack multiple unexplained technical terms in one sentence. If a technical term is needed, explain what it means in the same breath instead of assuming familiarity. A plain sentence that's slightly less precise beats a dense one that's exactly right but hard to follow.
+
+## dbt learning status
+
+Course (dbt Fundamentals, free): modules 1-2 done (Welcome, Analytics Development Lifecycle); 3, 4, 6 pending (Set Up dbt, Models, Data Tests). Building ahead of course completion deliberately — Claude Code teaches core dbt concepts directly during build sessions rather than assuming course knowledge; course modules get done afterward to consolidate/fill gaps, not as a gate before building.
+
+**Concepts actually covered so far (via building, not the course):**
+- Seeds vs sources — seeds are loaded by dbt itself via `dbt seed` and referenced with `ref()`; sources are raw data landed by something outside dbt and referenced with `source()`
+- What a model is — a `.sql` file with a `SELECT`, compiled by dbt into a view or table
+- Materializations — view vs table
+- Why staging models exist — rename/cast only, no business logic, one file per source table
+- Generic tests (`not_null`, `unique`) declared in schema `.yml` files
+
+**Not yet covered:** snapshots, incremental models, intermediate/mart layers, packages, macros, sources (as a formal dbt concept — first pipeline used a seed, not a real source yet).
+
+Update this section whenever the course progresses or a new concept gets covered in a build session — keep the "covered" list growing rather than replacing it wholesale, so it stays a genuine record of what can be assumed as known.
+
+---
+
+## Roadmap & Progress
+
+The full build, phase by phase. Check items off as they're genuinely completed — not when started, not when "basically done." If a step was practiced or approximated rather than fully built (e.g. against fake seed data instead of a real API), leave it unchecked and add a short note.
+
+### Phase 1 · Foundations & Scaffolding (~15-20 hrs)
+Stand up the skeleton — repo, environments, whole stack running locally before a single feature exists.
+
+- [x] Create the Git repo, branching setup and a real README
+- [x] Set up the Python environment (uv) and project structure
+- [ ] Spin up a Supabase project (auth + Postgres)
+- [x] Create the GCP project and a BigQuery dataset
+- [ ] Scaffold a hello-world FastAPI service
+- [x] Wire up .env / secrets management
+- [ ] Confirm the whole stack runs locally, end to end
+
+### Phase 2 · First Vertical Slice (~25-30 hrs)
+Take JustGiving alone from API → raw storage → dbt → one clean table. Prove the pattern before scaling it.
+
+- [ ] Get JustGiving API access and auth working
+- [ ] Write the ingestion script — pagination, rate limits, error handling
+- [ ] Land raw JustGiving data in BigQuery
+- [ ] Wrap it in a basic Prefect flow
+- [ ] Define the dbt source and first staging model *(pattern already practiced once via seed, not real source — see below)*
+- [ ] Build one clean mart table you'd actually chart
+
+**Already built as a practice rep (not yet the real Phase 2 deliverable):** `dbt/seeds/justgiving_donations.csv` (28 rows of sample donation data, deliberately raw/inconsistent column names) → `stg_justgiving_donations` staging model at `dbt/models/staging/justgiving/` (renames + casts types, materialized as a view via `+materialized: view` on the `staging` folder in `dbt_project.yml`) → schema tests (`not_null` on core columns, `unique` + `not_null` on `donation_id`). `dbt seed`, `dbt run`, `dbt test` all pass. This proved the pattern end to end but used fake seed data, not the real JustGiving API — the actual Phase 2 items above are still open.
+
+**Milestone (not yet reached):** first real source flowing end to end.
+
+### Phase 3 · Multi-Source Data Layer (~50-60 hrs)
+Add LaunchGood, Instagram, TikTok and Mailchimp/Klaviyo. Generalise ingestion and build the full dbt model layer with tests and docs.
+
+- [ ] Generalise ingestion into a reusable connector shape
+- [ ] Build the LaunchGood connector
+- [ ] Build the Instagram and TikTok connectors
+- [ ] Build the Mailchimp/Klaviyo connector
+- [ ] Model the staging layer for every source
+- [ ] Build intermediate + mart models that unify the sources
+- [ ] Add dbt tests (not_null, unique, relationships) and docs
+- [ ] Schedule multi-source refreshes in Prefect
+
+### Phase 4 · Backend API (~25-35 hrs)
+Build the FastAPI layer that serves modelled data to the frontend — endpoints, auth, and strict per-charity data isolation.
+
+- [ ] Design the endpoints the dashboard actually needs
+- [ ] Wire Supabase auth into the backend
+- [ ] Build the query layer that serves marts from BigQuery
+- [ ] Enforce per-charity data isolation (multi-tenancy)
+- [ ] Add caching and sensible response shaping
+- [ ] Write basic API tests
+
+### Phase 5 · Dashboard Frontend (~50-65 hrs)
+Build what charities actually see — Next.js/React dashboards with Tailwind and Recharts, wired to your backend.
+
+- [ ] Scaffold the Next.js app and auth flow
+- [ ] Build the app shell, nav and routing
+- [ ] Build the core dashboard views
+- [ ] Wire Recharts visualisations to live data
+- [ ] Handle loading, empty and error states
+- [ ] Polish and make it responsive down to mobile
+
+**Milestone (not yet reached):** portfolio-ready — a working multi-source dashboard demoable even before billing or deploy. This is the point it earns its place in the job search.
+
+### Phase 6 · Billing & Subscription Tiers (~25-30 hrs)
+Add Stripe, three tiers, checkout and feature-gating.
+
+- [ ] Define the three tiers and what each one unlocks
+- [ ] Integrate Stripe Checkout and the customer portal
+- [ ] Handle webhooks and subscription state
+- [ ] Gate features by tier in both backend and frontend
+- [ ] Test the upgrade / downgrade / cancel flows
+
+### Phase 7 · Ship It — Deploy & Beta (~25-35 hrs)
+Dockerise, deploy to Cloud Run, set up CI/CD, onboard the first real charity. This is the MVP.
+
+- [ ] Dockerise the backend and frontend
+- [ ] Deploy to Cloud Run with proper env/secrets
+- [ ] Set up GitHub Actions CI/CD
+- [ ] Add logging and basic monitoring
+- [ ] Buy the domain and wire it up
+- [ ] Onboard your first beta charity
+
+**Milestone (not yet reached):** MVP shipped — Firasah is live, real data, real user. The core build is done.
+
+### Phase 8 · Agentic AI Layer (post-MVP — open-ended)
+Layer autonomous agents on top of Firasah — drafting and emailing weekly reports, chasing up Slack campaigns, acting on the data it already holds.
+
+- [ ] Pick an agent framework (LangGraph or MS Agent Framework)
+- [ ] Give an agent read-access to Firasah's marts as tools
+- [ ] Build the weekly-report drafting agent
+- [ ] Add email drafting and sending
+- [ ] Build the Slack campaign chase-up agent
+- [ ] Add guardrails and human-in-the-loop review
 
 ## Not doing yet / explicitly deferred
 
@@ -79,13 +177,14 @@ The person building this wants to genuinely understand the infrastructure they'r
 - Agentic AI layer — final phase, not before the rest is solid
 - Deep hands-on depth on tools outside the core stack (e.g. Databricks/Spark) — conceptual fluency mapped to BigQuery/dbt experience is sufficient; not worth build time given the job-search timeline
 
-## Keeping this file current
+---
 
-When a real architectural decision gets made, a phase completes, or the stack changes — update the relevant section above in the same session. Don't let this file drift out of sync with what's actually true of the codebase.
+## How Claude Code should use this file
 
-## Session wrap-up
+**When asked "where should I continue" / "what's next":** scan the roadmap top to bottom, phase by phase, and find the *first* unchecked `- [ ]` item. State which phase it's in and give a one-line reminder of what the step involves. Don't jump ahead to a later phase's steps even if they seem more relevant to something just discussed.
 
-Before ending a session where real progress was made, update the "Current
-phase" / learning-progress section above to reflect what was actually
-covered and built — don't wait to be asked if it's obviously out of date.
+**When told a step is done:** update that specific checkbox to `- [x]`. If it's genuinely ambiguous whether something counts as fully done — ask, or check it off with a short caveat note rather than marking it cleanly complete.
 
+**Proactively, at the end of any session where real progress happened** — don't wait to be asked: update the relevant roadmap checkboxes, add or extend notes on anything partially done, and update the "dbt learning status" section if a new concept was covered. Then stage and commit this file specifically (`docs: update roadmap progress`).
+
+**Don't** restructure, reorder, delete steps, or add new phases without being explicitly asked — only toggle checkboxes and extend notes. The shape of the plan is intentional; only the progress markers change during normal sessions.
