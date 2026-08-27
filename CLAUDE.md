@@ -92,7 +92,7 @@ Stand up the skeleton — repo, environments, whole stack running locally before
 - [x] Create the GCP project and a BigQuery dataset
 - [x] Scaffold a hello-world FastAPI service
 - [x] Wire up .env / secrets management
-- [ ] Confirm the whole stack runs locally, end to end
+- [x] Confirm the whole stack runs locally, end to end
 
 ### Phase 2 · First Vertical Slice (~25-30 hrs)
 Take JustGiving alone from API → raw storage → dbt → one clean table. Prove the pattern before scaling it.
