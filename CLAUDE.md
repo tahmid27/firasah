@@ -31,6 +31,7 @@ Operational specifics worth knowing before running anything — these are easy t
 - **BigQuery connection:** profile name `firasah`, target project `firasah-dev`, dataset `firasah_dev`, region `europe-west2`. Connection verified via `dbt debug`.
 - **Credentials:** GCP service account key sits in `credentials/` (gitignored as a whole folder, not by filename).
 - **Supabase project:** org `Firasah`, project `firasah-dev`, region London (eu-west-2). `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` set in `.env` (placeholders in `.env.example`). `supabase` added as a project dependency (via `uv add supabase`). Connection verified with the anon key via the Python client — no tables exist yet, so auth/schema wiring is still open (Phase 4).
+- **FastAPI app:** entry point is `main.py` at repo root, currently just a `GET /health` route returning `{"status": "ok"}`. Run locally with `uv run uvicorn main:app --reload --port 8000`; interactive docs at `http://localhost:8000/docs`. `uvicorn` added as a dependency (via `uv add "uvicorn[standard]"`). Health check doesn't verify any dependency (Supabase/BigQuery) yet — placeholder only.
 
 ## Conventions
 
@@ -89,7 +90,7 @@ Stand up the skeleton — repo, environments, whole stack running locally before
 - [x] Set up the Python environment (uv) and project structure
 - [x] Spin up a Supabase project (auth + Postgres)
 - [x] Create the GCP project and a BigQuery dataset
-- [ ] Scaffold a hello-world FastAPI service
+- [x] Scaffold a hello-world FastAPI service
 - [x] Wire up .env / secrets management
 - [ ] Confirm the whole stack runs locally, end to end
 
