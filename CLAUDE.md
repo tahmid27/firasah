@@ -30,6 +30,7 @@ Operational specifics worth knowing before running anything — these are easy t
 - **dbt project lives at `dbt/`** (a subfolder, not repo root).
 - **BigQuery connection:** profile name `firasah`, target project `firasah-dev`, dataset `firasah_dev`, region `europe-west2`. Connection verified via `dbt debug`.
 - **Credentials:** GCP service account key sits in `credentials/` (gitignored as a whole folder, not by filename).
+- **Supabase project:** org `Firasah`, project `firasah-dev`, region London (eu-west-2). `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` set in `.env` (placeholders in `.env.example`). `supabase` added as a project dependency (via `uv add supabase`). Connection verified with the anon key via the Python client — no tables exist yet, so auth/schema wiring is still open (Phase 4).
 
 ## Conventions
 
@@ -86,7 +87,7 @@ Stand up the skeleton — repo, environments, whole stack running locally before
 
 - [x] Create the Git repo, branching setup and a real README
 - [x] Set up the Python environment (uv) and project structure
-- [ ] Spin up a Supabase project (auth + Postgres)
+- [x] Spin up a Supabase project (auth + Postgres)
 - [x] Create the GCP project and a BigQuery dataset
 - [ ] Scaffold a hello-world FastAPI service
 - [x] Wire up .env / secrets management
