@@ -10,4 +10,5 @@ dependencies = [
     "dbt-bigquery>=1.12.0",
     "dbt-core>=1.12.2",
     "fastapi>=0.141.1",
+    "supabase>=2.31.0",
 ]
