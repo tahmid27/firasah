@@ -19,3 +19,5 @@ models:
   firasah:
     staging:
       +materialized: view
+    marts:
+      +materialized: table
