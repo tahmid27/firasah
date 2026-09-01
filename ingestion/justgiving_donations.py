@@ -16,6 +16,7 @@ from pathlib import Path
 import httpx
 from dotenv import load_dotenv
 from google.cloud import bigquery
+from prefect import flow, task
 
 load_dotenv()
 
@@ -54,6 +55,7 @@ def _get_with_retries(client: httpx.Client, url: str, params: dict) -> httpx.Res
     raise RuntimeError(f"Exceeded {MAX_RETRIES} retries for {url}")
 
 
+@task
 def fetch_donations(page_short_name: str) -> list[dict]:
     url = f"{BASE_URL}/v2/fundraising/pages/{page_short_name}/donations"
     donations = []
@@ -82,11 +84,16 @@ def fetch_donations(page_short_name: str) -> list[dict]:
     return donations
 
 
+@task(retries=2, retry_delay_seconds=10)
 def load_to_bigquery(donations: list[dict], page_short_name: str) -> None:
     """Appends fetched donations to the raw landing table, tagged with when
     and which page they came from. Schema is auto-detected from the JSON —
     this is the raw layer, so field names/types stay exactly as the API
     sent them; renaming and casting happens later in the dbt staging model.
+
+    Retries here are Prefect's own (transient BigQuery/network failures) —
+    separate from the JustGiving-specific 429/backoff handling in
+    _get_with_retries, which deals with a different kind of failure.
     """
     ingested_at = datetime.now(timezone.utc).isoformat()
     rows = [
@@ -105,8 +112,8 @@ def load_to_bigquery(donations: list[dict], page_short_name: str) -> None:
     print(f"Loaded {len(rows)} rows into {RAW_TABLE_ID}")
 
 
-if __name__ == "__main__":
-    page_short_name = sys.argv[1] if len(sys.argv) > 1 else "example-fundraising-page"
+@flow(name="justgiving-donations-ingestion")
+def justgiving_donations_flow(page_short_name: str) -> None:
     donations = fetch_donations(page_short_name)
     print(f"Total donations fetched: {len(donations)}")
 
@@ -116,3 +123,8 @@ if __name__ == "__main__":
     print(f"Saved to {out_path}")
 
     load_to_bigquery(donations, page_short_name)
+
+
+if __name__ == "__main__":
+    page_short_name = sys.argv[1] if len(sys.argv) > 1 else "example-fundraising-page"
+    justgiving_donations_flow(page_short_name)
