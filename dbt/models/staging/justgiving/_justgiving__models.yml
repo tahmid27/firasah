@@ -2,30 +2,41 @@ version: 2
 
 models:
   - name: stg_justgiving_donations
-    description: Cleaned, typed donation records sourced from the JustGiving seed data.
+    description: >
+      Cleaned, typed donation records sourced from the real JustGiving API
+      (via raw_justgiving_donations). Thin rename/cast layer only — the raw
+      source is append-only and not deduplicated, so donation_id is not
+      unique here on purpose; a donation can legitimately appear more than
+      once if the ingestion flow has run multiple times. Deduplication and
+      "what's the current state of this donation" logic belongs in the mart
+      layer, not here.
     columns:
       - name: donation_id
         description: Unique identifier for the donation, as provided by JustGiving.
         tests:
-          - unique
           - not_null
 
       - name: donor_name
-        description: Full name of the donor.
+        description: Display name of the donor (may be "Anonymous").
         tests:
           - not_null
 
-      - name: amount_gbp
-        description: Donation amount in GBP.
+      - name: amount
+        description: Donation amount, in the currency given by currency_code.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: ISO currency code for the donation amount.
         tests:
           - not_null
 
       - name: donation_date
-        description: Date the donation was made.
+        description: Timestamp the donation was made.
         tests:
           - not_null
 
-      - name: campaign_name
-        description: Name of the fundraising campaign the donation was made to.
+      - name: charity_id
+        description: JustGiving charity ID the donation was made to.
         tests:
           - not_null

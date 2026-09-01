@@ -75,8 +75,10 @@ Course (dbt Fundamentals, free): modules 1-2 done (Welcome, Analytics Developmen
 - Materializations — view vs table
 - Why staging models exist — rename/cast only, no business logic, one file per source table
 - Generic tests (`not_null`, `unique`) declared in schema `.yml` files
+- Sources, for real this time — `source()` points at a table landed by something outside dbt (our own Python ingestion script, not `dbt seed`), declared in a `sources.yml` with `database`/`schema` keys (for BigQuery: `database` = GCP project, `schema` = dataset — non-obvious mapping since "database" isn't BigQuery's usual term for that)
+- A real SQL gotcha, not dbt-specific but hit while building a staging model: naming a CTE the same as a column in it (`with source as (...)` + a column literally called `source`) makes a bare `select source` return the *entire row as a struct*, not the column — SQL resolves an unqualified name to a matching table/CTE alias before a column. Fix: don't name the CTE the same as any column you're pulling from it (renamed the convention from `source` to `raw` for this reason)
 
-**Not yet covered:** snapshots, incremental models, intermediate/mart layers, packages, macros, sources (as a formal dbt concept — first pipeline used a seed, not a real source yet).
+**Not yet covered:** snapshots, incremental models, intermediate/mart layers, packages, macros.
 
 Update this section whenever the course progresses or a new concept gets covered in a build session — keep the "covered" list growing rather than replacing it wholesale, so it stays a genuine record of what can be assumed as known.
 
@@ -104,12 +106,12 @@ Take JustGiving alone from API → raw storage → dbt → one clean table. Prov
 - [x] Write the ingestion script — pagination, rate limits, error handling
 - [x] Land raw JustGiving data in BigQuery
 - [x] Wrap it in a basic Prefect flow
-- [ ] Define the dbt source and first staging model *(pattern already practiced once via seed, not real source — see below)*
+- [x] Define the dbt source and first staging model
 - [ ] Build one clean mart table you'd actually chart
 
 **Open question to resolve when building the staging model:** `raw_justgiving_donations` is append-only — every ingestion run lands a full snapshot of whatever donations currently exist on a page, tagged with `_ingested_at`. If a donation gets refunded/cancelled, it just silently stops appearing in later pulls — there's no explicit status field confirmed yet either way. Before building the staging/mart model, check whether the JustGiving API actually exposes a donation status field (e.g. `Cancelled`/`Refunded`) — if so, filtering on it is the clean fix. If not, the only way to detect a disappeared donation is diffing: compare a donation's last-seen `_ingested_at` against the most recent pull's timestamp — if they don't match, it dropped out of the latest snapshot. That diffing pattern is essentially what dbt **snapshots** exist to formalize (tracking a row's state/changes over time) — a concept not yet covered (see dbt learning status below), but this is the real problem that motivates it, so it's worth explaining properly when we get here rather than skipping past it.
 
-**Already built as a practice rep (not yet the real Phase 2 deliverable):** `dbt/seeds/justgiving_donations.csv` (28 rows of sample donation data, deliberately raw/inconsistent column names) → `stg_justgiving_donations` staging model at `dbt/models/staging/justgiving/` (renames + casts types, materialized as a view via `+materialized: view` on the `staging` folder in `dbt_project.yml`) → schema tests (`not_null` on core columns, `unique` + `not_null` on `donation_id`). `dbt seed`, `dbt run`, `dbt test` all pass. This proved the pattern end to end but used fake seed data, not the real JustGiving API — the actual Phase 2 items above are still open.
+**Real source + staging model built:** `dbt/models/staging/justgiving/_justgiving__sources.yml` declares the `justgiving` source pointing at `raw_justgiving_donations` (the table the Python ingestion script lands data into — see above). `stg_justgiving_donations` renames/casts the real API fields (including parsing JustGiving's `.NET`-style `donationDate` string into a real timestamp) and is intentionally *not* deduplicated — `donation_id` is `not_null`-tested but not `unique`-tested, since the append-only raw layer can legitimately contain the same donation more than once across pulls; dedup is deferred to the mart layer. `dbt run` and `dbt test` (6 tests, all `not_null`) pass. This replaced the earlier seed-based practice rep (deleted `dbt/seeds/justgiving_donations.csv` and its model) now that the real pattern works end to end.
 
 **Milestone (not yet reached):** first real source flowing end to end.
 
