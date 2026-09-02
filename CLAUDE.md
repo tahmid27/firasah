@@ -123,6 +123,8 @@ Take JustGiving alone from API → raw storage → dbt → one clean table. Prov
 ### Phase 3 · Multi-Source Data Layer (~50-60 hrs)
 Add LaunchGood, Instagram, TikTok and Mailchimp/Klaviyo. Generalise ingestion and build the full dbt model layer with tests and docs.
 
+**Before starting "Schedule multi-source refreshes in Prefect" below:** enable billing on the `firasah-dev` GCP project (see the BigQuery free tier/DML note under Environment & setup notes). A recurring pipeline that includes `dbt snapshot` will hit BigQuery's free-tier DML block on every single scheduled run otherwise — this needs sorting before scheduling goes live, not after. Set a GCP budget alert at the same time (e.g. "email me if spend hits $1") — enabling billing doesn't mean you start paying (still get 1 TiB queries + 10 GB storage free per month), but the alert catches any genuine mistake early.
+
 - [ ] Generalise ingestion into a reusable connector shape
 - [ ] Build the LaunchGood connector
 - [ ] Build the Instagram and TikTok connectors
