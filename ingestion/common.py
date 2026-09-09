@@ -20,13 +20,18 @@ from prefect import task
 MAX_RETRIES = 5
 
 
-def get_with_retries(client: httpx.Client, url: str, params: dict) -> httpx.Response:
-    """GETs a URL, retrying on transient errors and backing off on rate
-    limits. Raises on non-retryable errors (4xx other than 429).
+def request_with_retries(
+    client: httpx.Client, method: str, url: str, **kwargs
+) -> httpx.Response:
+    """Calls a URL with any HTTP method, retrying on transient errors and
+    backing off on rate limits. Raises on non-retryable errors (4xx other
+    than 429). `**kwargs` (params, json, data, headers, ...) pass straight
+    through to httpx — generalised beyond GET because TikTok's video.list
+    endpoint requires POST, unlike JustGiving's GET-only donations endpoint.
     """
     for attempt in range(MAX_RETRIES):
         try:
-            response = client.get(url, params=params)
+            response = client.request(method, url, **kwargs)
         except httpx.TransportError:
             if attempt == MAX_RETRIES - 1:
                 raise
@@ -86,3 +91,29 @@ def load_raw_to_bigquery(rows: list[dict], table_id: str, tags: dict) -> None:
     job = client.load_table_from_json(tagged_rows, table_id, job_config=job_config)
     job.result()  # wait for the load job to finish, raises on failure
     print(f"Loaded {len(tagged_rows)} rows into {table_id}")
+
+
+def update_env_file(updates: dict[str, str], path: str | Path = ".env") -> None:
+    """Rewrites specific KEY=VALUE lines in a .env file in place, leaving
+    everything else untouched. Needed for OAuth connectors (TikTok first,
+    likely others later) whose refresh token rotates every time it's used —
+    the old one stops working once it does, so the new one has to be saved
+    immediately or the next run breaks.
+
+    Rewrites the whole file content deliberately rather than appending —
+    a blind append bit us once before (see CLAUDE.md: appending to a .env
+    file missing a trailing newline corrupted the previous line).
+    """
+    path = Path(path)
+    lines = path.read_text().splitlines() if path.exists() else []
+    remaining = dict(updates)
+
+    for i, line in enumerate(lines):
+        if "=" not in line or line.strip().startswith("#"):
+            continue
+        key = line.split("=", 1)[0]
+        if key in remaining:
+            lines[i] = f"{key}={remaining.pop(key)}"
+
+    lines.extend(f"{key}={value}" for key, value in remaining.items())
+    path.write_text("\n".join(lines) + "\n")
