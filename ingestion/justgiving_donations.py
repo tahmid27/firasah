@@ -17,7 +17,7 @@ import httpx
 from dotenv import load_dotenv
 from prefect import flow, task
 
-from ingestion.common import get_with_retries, load_raw_to_bigquery, save_raw_json
+from ingestion.common import load_raw_to_bigquery, request_with_retries, save_raw_json
 
 load_dotenv()
 
@@ -38,8 +38,11 @@ def fetch_donations(page_short_name: str) -> list[dict]:
     ) as client:
         page_number = 1
         while True:
-            response = get_with_retries(
-                client, url, params={"pageNumber": page_number, "pageSize": PAGE_SIZE}
+            response = request_with_retries(
+                client,
+                "GET",
+                url,
+                params={"pageNumber": page_number, "pageSize": PAGE_SIZE},
             )
             body = response.json()
             donations.extend(body["donations"])
