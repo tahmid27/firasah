@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_tiktok_videos
+    description: >
+      Cleaned, typed video records from the TikTok Display API (via
+      raw_tiktok_videos). Thin rename/cast layer only — not deduplicated,
+      same reasoning as every other staging model in this project.
+    columns:
+      - name: video_id
+        description: Unique identifier for the video, as provided by TikTok.
+        tests:
+          - not_null
+
+      - name: posted_at
+        description: Timestamp the video was posted.
+        tests:
+          - not_null
+
+      - name: view_count
+        description: Total views on the video at the time of the pull.
+        tests:
+          - not_null
+
+  - name: stg_tiktok_user_info
+    description: >
+      Cleaned, typed account-level stats from the TikTok Display API (via
+      raw_tiktok_user_info). One row per ingestion run — see the
+      follower_count caveat in CLAUDE.md (the API's figure can legitimately
+      differ from what the TikTok app itself displays).
+    columns:
+      - name: account_id
+        description: TikTok's open_id for the connected account.
+        tests:
+          - not_null
+
+      - name: follower_count
+        description: >
+          Follower count as returned by the API — may differ slightly from
+          what the TikTok app displays (platforms commonly filter
+          spam/bot accounts from the publicly displayed count but not from
+          the raw API figure).
+        tests:
+          - not_null

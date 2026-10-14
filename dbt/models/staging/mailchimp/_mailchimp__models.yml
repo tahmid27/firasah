@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: stg_mailchimp_campaign_reports
+    description: >
+      Cleaned, typed campaign report data from the Mailchimp Marketing API
+      (via raw_mailchimp_campaign_reports), with Mailchimp's nested
+      opens/clicks/bounces objects flattened into plain columns. Thin
+      rename/cast layer only — not deduplicated, same reasoning as every
+      other staging model in this project.
+    columns:
+      - name: campaign_id
+        description: Unique identifier for the campaign, as provided by Mailchimp.
+        tests:
+          - not_null
+
+      - name: campaign_title
+        description: Internal campaign title (not the subject line shown to recipients).
+        tests:
+          - not_null
+
+      - name: emails_sent
+        description: Total number of emails sent for this campaign.
+        tests:
+          - not_null
+
+      - name: unique_opens
+        description: >
+          Number of unique recipients who opened the email, per
+          Mailchimp's pixel-based open tracking. A genuine undercount for
+          recipients whose email client blocks remote images by default
+          (e.g. junk-foldered mail) — see CLAUDE.md for the real example
+          that surfaced this.
+
+      - name: unique_clicks
+        description: Number of unique recipients who clicked a tracked link.
+
+  - name: stg_mailchimp_audience_stats
+    description: >
+      Cleaned, typed audience/list-level stats from the Mailchimp Marketing
+      API (via raw_mailchimp_audience_stats), with Mailchimp's nested
+      stats object flattened into plain columns.
+    columns:
+      - name: list_id
+        description: Unique identifier for the audience/list, as provided by Mailchimp.
+        tests:
+          - not_null
+
+      - name: member_count
+        description: Current number of subscribers in this audience.
+        tests:
+          - not_null

@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: stg_instagram_account_info
+    description: >
+      Cleaned, typed account-level stats from the Instagram Graph API (via
+      raw_instagram_account_info). One row per ingestion run — the mart
+      layer decides "current" vs. "historical" account stats, same
+      pattern as stg_tiktok_user_info.
+    columns:
+      - name: account_id
+        description: Instagram Business Account ID, as provided by the Graph API.
+        tests:
+          - not_null
+
+      - name: followers_count
+        description: Follower count at the time of the pull.
+        tests:
+          - not_null
+
+  - name: stg_instagram_media
+    description: >
+      Cleaned, typed media (post) records from the Instagram Graph API
+      (via raw_instagram_media). Thin rename/cast layer only — not
+      deduplicated, same reasoning as every other staging model in this
+      project.
+    columns:
+      - name: media_id
+        description: Unique identifier for the media item, as provided by the Graph API.
+        tests:
+          - not_null
+
+      - name: posted_at
+        description: Timestamp the media was posted.
+        tests:
+          - not_null
