@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: fct_social_posts
+    description: >
+      One row per post across every social platform (TikTok + Instagram),
+      unioned in int_social_posts_unioned. This is the table a cross-platform
+      content-performance chart should query. view_count and share_count are
+      null for Instagram rows — not exposed by the basic media fields
+      currently pulled (would need the separate insights endpoint).
+    columns:
+      - name: post_id
+        description: >
+          Cross-platform unique identifier (platform + the platform's own
+          post ID, e.g. "tiktok-7123456789").
+        tests:
+          - unique
+          - not_null
+
+      - name: platform
+        description: Which platform the post is from ("tiktok" or "instagram").
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["tiktok", "instagram"]
+
+      - name: posted_at
+        description: Timestamp the post was published.
+        tests:
+          - not_null
+
+      - name: like_count
+        description: Like count as of the most recent pull.
+        tests:
+          - not_null
+
+  - name: fct_social_account_stats
+    description: >
+      One row per account per ingestion run across every social platform
+      (TikTok + Instagram), unioned in int_social_account_stats_unioned.
+      Not deduplicated — multiple rows per account over time is the point,
+      it's what makes a follower-growth chart possible. total_likes is null
+      for Instagram rows — no equivalent lifetime-total field exposed by the
+      basic account fields currently pulled.
+    columns:
+      - name: account_id
+        description: >
+          Cross-platform unique identifier (platform + the platform's own
+          account ID).
+        tests:
+          - not_null
+
+      - name: platform
+        description: Which platform the account is on ("tiktok" or "instagram").
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["tiktok", "instagram"]
+
+      - name: follower_count
+        description: Follower count as of this ingestion run.
+        tests:
+          - not_null

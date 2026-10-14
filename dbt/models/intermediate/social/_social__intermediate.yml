@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: int_social_posts_unioned
+    description: >
+      Combines TikTok videos and Instagram media into one common shape —
+      deduplicated to the latest-known row per post, since a post's engagement
+      stats (likes, comments, ...) change between pulls and only the current
+      figure matters here. Tested at the fct_social_posts layer instead.
+
+  - name: int_social_account_stats_unioned
+    description: >
+      Combines TikTok and Instagram account-level stats into one common
+      shape — deliberately NOT deduplicated, unlike int_social_posts_unioned.
+      Every ingestion run's figures are a genuine point-in-time data point
+      (this account's follower count on this date), kept as its own row so a
+      follower-growth-over-time chart is possible downstream. Tested at the
+      fct_social_account_stats layer instead.
