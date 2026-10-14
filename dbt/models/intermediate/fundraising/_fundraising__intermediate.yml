@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: int_donations_unioned
+    description: >
+      Combines JustGiving (refund-aware, via its snapshot) and LaunchGood
+      (not refund-aware yet) donations into one common shape — the actual
+      "unify the sources" step. Not deduplicated beyond what each input
+      already guarantees; tested at the fct_donations layer instead, since
+      that's the table anything downstream actually queries.

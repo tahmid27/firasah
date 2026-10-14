@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: fct_donations
+    description: >
+      One row per donation across every fundraising platform (JustGiving +
+      LaunchGood), unioned in int_donations_unioned. This is the table a
+      cross-platform dashboard chart (e.g. total raised over time, by
+      platform) should query. Refund/cancellation handling currently only
+      applies to the JustGiving side (via justgiving_donations_snapshot) —
+      LaunchGood donations are all treated as currently-active, since there's
+      no reliable way yet to detect one disappearing between CSV exports.
+    columns:
+      - name: donation_id
+        description: >
+          Cross-platform unique identifier (source platform + the
+          platform's own donation ID, e.g. "justgiving-12345").
+        tests:
+          - unique
+          - not_null
+
+      - name: source
+        description: Which platform the donation came from ("justgiving" or "launchgood").
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["justgiving", "launchgood"]
+
+      - name: donation_date
+        description: Timestamp the donation was made.
+        tests:
+          - not_null
+
+      - name: amount
+        description: Donation amount, in the currency given by currency_code.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: ISO currency code for the donation amount.
+        tests:
+          - not_null
