@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: tiktok
+    description: Raw TikTok data landed by the Python ingestion script (ingestion/tiktok_videos.py) via the TikTok Display API. Not loaded through dbt.
+    database: firasah-dev
+    schema: firasah_dev
+    tables:
+      - name: raw_tiktok_videos
+        description: >
+          Raw video records for the connected TikTok account (video.list
+          endpoint). Append-only — every ingestion run lands a full
+          snapshot of the account's videos, tagged with _ingested_at, so
+          the same video can appear multiple times across runs. Not
+          deduplicated at this layer on purpose.
+        loaded_at_field: _ingested_at
+
+      - name: raw_tiktok_user_info
+        description: >
+          Raw account-level stats for the connected TikTok account
+          (user.info endpoint) — follower/following/likes/video counts at
+          the time of the pull. Append-only, one row per ingestion run, not
+          deduplicated at this layer on purpose (the mart layer is where
+          "current" vs. "historical" account stats gets decided).
+        loaded_at_field: _ingested_at

@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: stg_launchgood_donations
+    description: >
+      Cleaned, typed donation records parsed from a LaunchGood donor-report
+      CSV export (via raw_launchgood_donations). Thin rename/cast layer
+      only — the raw source is append-only and not deduplicated, so
+      donation_id is not unique here on purpose; a donation can legitimately
+      appear more than once if the same export (or an overlapping one) has
+      been ingested more than once. Deduplication belongs in the mart layer.
+    columns:
+      - name: donation_id
+        description: Unique identifier for the donation, as provided by LaunchGood.
+        tests:
+          - not_null
+
+      - name: donation_date
+        description: Timestamp the donation was made.
+        tests:
+          - not_null
+
+      - name: status
+        description: Donation status as reported by LaunchGood (e.g. "Charged").
+        tests:
+          - not_null
+
+      - name: amount
+        description: Donation amount, in the currency given by currency_code.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: ISO currency code for the donation amount.
+        tests:
+          - not_null
+
+      - name: campaign_name
+        description: Name of the LaunchGood campaign the donation was made to.
+        tests:
+          - not_null

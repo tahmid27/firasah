@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: instagram
+    description: Raw Instagram data landed by the Python ingestion script (ingestion/instagram_posts.py) via the Instagram Graph API (Facebook Login setup, for a Page-linked Instagram Business Account). Not loaded through dbt.
+    database: firasah-dev
+    schema: firasah_dev
+    tables:
+      - name: raw_instagram_account_info
+        description: >
+          Raw account-level stats for the connected Instagram Business
+          Account — follower/following/media counts at the time of the
+          pull. Append-only, one row per ingestion run, not deduplicated
+          at this layer on purpose.
+        loaded_at_field: _ingested_at
+
+      - name: raw_instagram_media
+        description: >
+          Raw media (post) records for the connected Instagram Business
+          Account. Append-only — every ingestion run lands a full
+          snapshot of the account's media, tagged with _ingested_at, so
+          the same post can appear multiple times across runs. Not
+          deduplicated at this layer on purpose.
+        loaded_at_field: _ingested_at

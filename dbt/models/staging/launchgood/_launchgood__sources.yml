@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: launchgood
+    description: Raw LaunchGood donor-report data landed by the Python ingestion script (ingestion/launchgood_donations.py) — parsed from a manually downloaded CSV export, not a live API pull. Not loaded through dbt.
+    database: firasah-dev
+    schema: firasah_dev
+    tables:
+      - name: raw_launchgood_donations
+        description: >
+          Raw donation records parsed from a LaunchGood donor-report CSV
+          export. Append-only — every ingestion run lands the full export
+          it was given, tagged with _ingested_at and _source_file, so the
+          same donation can appear multiple times across runs of the same
+          or different export files. Not deduplicated at this layer on
+          purpose.
+        loaded_at_field: _ingested_at

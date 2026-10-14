@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: mailchimp
+    description: Raw Mailchimp data landed by the Python ingestion script (ingestion/mailchimp_campaigns.py) via the Mailchimp Marketing API. Not loaded through dbt.
+    database: firasah-dev
+    schema: firasah_dev
+    tables:
+      - name: raw_mailchimp_campaign_reports
+        description: >
+          Raw campaign report data for every campaign that has actually
+          sent (drafts are filtered out before ingestion, since they have
+          no report data). Nested fields (opens, clicks, bounces, ...)
+          land as BigQuery STRUCT columns, matching Mailchimp's nested
+          JSON response shape. Append-only, not deduplicated at this
+          layer on purpose.
+        loaded_at_field: _ingested_at
+
+      - name: raw_mailchimp_audience_stats
+        description: >
+          Raw audience/list-level stats (subscriber counts, engagement
+          rates, ...). Nested fields land as BigQuery STRUCT columns,
+          matching Mailchimp's nested JSON response shape. Append-only,
+          not deduplicated at this layer on purpose.
+        loaded_at_field: _ingested_at
