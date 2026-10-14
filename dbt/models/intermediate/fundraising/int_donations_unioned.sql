@@ -41,7 +41,14 @@ launchgood as (
     -- containing a refunded donation: the raw `status` field (not carried
     -- into stg_launchgood_donations as a filter yet) may flag it directly,
     -- which would be a plain filter, no snapshot needed.
+    --
+    -- Still deduped to the latest-ingested row per donation_id, same as
+    -- JustGiving's snapshot source query does internally — the raw layer
+    -- is append-only, so re-ingesting the same (or an overlapping) CSV
+    -- export would otherwise produce duplicate rows here and break the
+    -- unique test on fct_donations.donation_id.
     from {{ ref('stg_launchgood_donations') }}
+    qualify row_number() over (partition by donation_id order by ingested_at desc) = 1
 
 ),
 
