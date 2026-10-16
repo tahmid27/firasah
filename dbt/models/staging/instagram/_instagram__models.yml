@@ -34,3 +34,12 @@ models:
         description: Timestamp the media was posted.
         tests:
           - not_null
+
+      - name: account_id
+        description: >
+          Instagram Business Account ID this media belongs to. Not carried
+          through into fct_social_posts yet — see CLAUDE.md for why a
+          cross-platform account_id link isn't possible there until TikTok's
+          raw video data carries an equivalent field.
+        tests:
+          - not_null
