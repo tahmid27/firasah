@@ -24,6 +24,14 @@ models:
         tests:
           - not_null
 
+      - name: list_id
+        description: The audience/list this campaign was sent to.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('fct_mailchimp_audience_stats')
+              field: list_id
+
   - name: fct_mailchimp_audience_stats
     description: >
       One row per audience/list per ingestion run (via
