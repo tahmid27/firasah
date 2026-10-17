@@ -50,3 +50,61 @@ models:
         description: Current number of subscribers in this audience.
         tests:
           - not_null
+
+  - name: stg_mailchimp_campaign_link_clicks
+    description: >
+      Per-link click counts for each sent campaign (via
+      raw_mailchimp_campaign_link_clicks). Thin rename layer, not
+      deduplicated — counts grow after a send, so fct_mailchimp_link_clicks
+      keeps the latest pull per link.
+    columns:
+      - name: campaign_id
+        description: Campaign the link was in; matches stg_mailchimp_campaign_reports.campaign_id.
+        tests:
+          - not_null
+
+      - name: link_id
+        description: Mailchimp's identifier for this link within the campaign.
+        tests:
+          - not_null
+
+      - name: url
+        description: The link's destination address.
+        tests:
+          - not_null
+
+  - name: stg_mailchimp_list_activity_daily
+    description: >
+      Daily audience activity (via raw_mailchimp_list_activity_daily). Not
+      deduplicated — each run re-lands the recent window.
+    columns:
+      - name: list_id
+        description: Audience the activity belongs to.
+        tests:
+          - not_null
+
+      - name: activity_date
+        description: The day the activity happened.
+        tests:
+          - not_null
+
+      - name: new_subscribers
+        description: People who subscribed that day (Mailchimp's `subs`).
+
+      - name: unsubscribes
+        description: People who unsubscribed that day (Mailchimp's `unsubs`).
+
+  - name: stg_mailchimp_list_growth_monthly
+    description: >
+      Monthly audience growth (via raw_mailchimp_list_growth_monthly). Not
+      deduplicated — the current month's figures change between runs.
+    columns:
+      - name: list_id
+        description: Audience the figures belong to.
+        tests:
+          - not_null
+
+      - name: month_start
+        description: First day of the month the figures cover.
+        tests:
+          - not_null

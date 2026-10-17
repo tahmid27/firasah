@@ -90,29 +90,75 @@ def fetch_page_details(page_short_name: str) -> dict:
     return page
 
 
+@task
+def fetch_event_page_names(event_id: str) -> list[str]:
+    """Every fundraising page under a JustGiving event (the larger
+    project/appeal), so one configured event covers all of its fundraisers
+    instead of listing pages by hand. Paginated with `page`/`pagesize`
+    (this endpoint's names — not the `pageNumber` the donations endpoint
+    uses); the response says how many pages there are.
+    """
+    names = []
+    page = 1
+
+    with httpx.Client(
+        headers={"x-api-key": APP_ID, "Accept": "application/json"}, timeout=30
+    ) as client:
+        while True:
+            response = request_with_retries(
+                client,
+                "GET",
+                f"{BASE_URL}/v1/event/{event_id}/pages",
+                params={"page": page, "pagesize": PAGE_SIZE},
+            )
+            body = response.json()
+            names.extend(p["pageShortName"] for p in body["fundraisingPages"])
+
+            if page >= body["totalPages"]:
+                break
+            page += 1
+
+    print(f"Event {event_id}: {len(names)} fundraising pages")
+    return names
+
+
 @flow(name="justgiving-donations-ingestion")
-def justgiving_donations_flow(page_short_name: str) -> None:
+def justgiving_donations_flow(event_id: str) -> None:
+    page_names = fetch_event_page_names(event_id)
+
     # Fetch everything before loading anything: a failed fetch then lands
-    # zero rows, so the snapshot never sees a half-finished pull (see
-    # justgiving_donations_snapshot).
-    donations = fetch_donations(page_short_name)
-    print(f"Total donations fetched: {len(donations)}")
-    page = fetch_page_details(page_short_name)
-    print(f"Page: {page.get('title')!r} (event: {page.get('eventName')!r})")
+    # zero rows for that page, so the snapshot never sees a half-finished
+    # pull (see justgiving_donations_snapshot). One page failing doesn't
+    # stop the others — its previous batch simply stays the latest one,
+    # which is the safe direction (stale, never falsely refunded).
+    fetched: dict[str, tuple[list[dict], dict]] = {}
+    failures: list[str] = []
+    for name in page_names:
+        try:
+            donations = fetch_donations(name)
+            page = fetch_page_details(name)
+        except Exception as exc:  # noqa: BLE001 — per-page isolation
+            print(f"[justgiving] page {name} FAILED: {exc!r}")
+            failures.append(name)
+            continue
+        print(f"Page {name!r}: {len(donations)} donations (event: {page.get('eventName')!r})")
+        fetched[name] = (donations, page)
 
-    save_raw_json(donations, "data/raw/justgiving_donations.json")
-    save_raw_json([page], "data/raw/justgiving_pages.json")
+    all_donations = [d for donations, _ in fetched.values() for d in donations]
+    save_raw_json(all_donations, "data/raw/justgiving_donations.json")
+    save_raw_json([page for _, page in fetched.values()], "data/raw/justgiving_pages.json")
 
-    load_raw_to_bigquery(
-        donations, RAW_TABLE_ID, tags={"_page_short_name": page_short_name}
-    )
-    load_raw_to_bigquery(
-        [page], RAW_PAGES_TABLE_ID, tags={"_page_short_name": page_short_name}
-    )
+    for name, (donations, page) in fetched.items():
+        tags = {"_page_short_name": name}
+        load_raw_to_bigquery(donations, RAW_TABLE_ID, tags=tags)
+        load_raw_to_bigquery([page], RAW_PAGES_TABLE_ID, tags=tags)
+
+    if failures:
+        raise RuntimeError(f"JustGiving pages that failed to fetch: {failures}")
 
 
 if __name__ == "__main__":
-    page_short_name = (
-        sys.argv[1] if len(sys.argv) > 1 else os.environ["JUSTGIVING_PAGE_SHORT_NAME"]
-    )
-    justgiving_donations_flow(page_short_name)
+    # Argument: the JustGiving event ID (default from .env). Every fundraising
+    # page under that event is pulled.
+    event_id = sys.argv[1] if len(sys.argv) > 1 else os.environ["JUSTGIVING_EVENT_ID"]
+    justgiving_donations_flow(event_id)
