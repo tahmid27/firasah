@@ -6,6 +6,8 @@ with tiktok as (
         posted_at,
         description as caption,
         'VIDEO' as media_type,
+        -- Instagram-only distinction (Reels vs feed); not applicable to TikTok
+        cast(null as string) as media_product_type,
         share_url as permalink,
         view_count,
         like_count,
@@ -26,6 +28,7 @@ instagram as (
         posted_at,
         caption,
         media_type,
+        media_product_type,
         permalink,
         -- Instagram's basic media fields don't expose view counts the way
         -- TikTok's video.list does — would need the separate insights
@@ -58,6 +61,7 @@ select
     posted_at,
     caption,
     media_type,
+    media_product_type,
     permalink,
     view_count,
     like_count,

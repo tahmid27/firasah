@@ -9,7 +9,15 @@ with justgiving as (
         donor_name,
         page_short_name as campaign_name,
         cast(null as bool) as is_gift_aid,
-        cast(null as bool) as is_zakat
+        cast(null as bool) as is_zakat,
+        -- JustGiving's donations endpoint doesn't expose any of these —
+        -- left as explicit nulls rather than dropping the columns, so
+        -- LaunchGood's richer detail still reaches the mart
+        cast(null as numeric) as zakat_amount,
+        cast(null as numeric) as processing_fees,
+        cast(null as numeric) as net_amount,
+        cast(null as string) as settlement_currency,
+        cast(null as bool) as has_marketing_consent
 
     -- Refund-aware: only donations still present as of the last snapshot
     -- run. See justgiving_donations_snapshot for how that's detected.
@@ -29,7 +37,12 @@ launchgood as (
         donor_display_name as donor_name,
         campaign_name,
         is_gift_aid,
-        is_zakat
+        is_zakat,
+        zakat_amount,
+        processing_fees,
+        net_amount,
+        settlement_currency,
+        has_marketing_consent
 
     -- No refund/cancellation detection on this side yet. A JustGiving-style
     -- snapshot (comparing consecutive pulls to spot a vanished donation)
@@ -72,6 +85,11 @@ select
     donor_name,
     campaign_name,
     is_gift_aid,
-    is_zakat
+    is_zakat,
+    zakat_amount,
+    processing_fees,
+    net_amount,
+    settlement_currency,
+    has_marketing_consent
 
 from unioned

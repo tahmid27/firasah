@@ -34,6 +34,10 @@ renamed as (
         safe_cast(zakat_amount_in_donation_currency as numeric) as zakat_amount,
         source as donation_source,
         payment_type,
+        safe_cast(total_processing_fees_paid_by_cc_in_settled_currency as numeric) as processing_fees,
+        safe_cast(total_online_donations_net_amount_in_settled_currency as numeric) as net_amount,
+        settlement_currency,
+        marketing_consent as has_marketing_consent,
         _source_file as source_file,
         _ingested_at as ingested_at
 
