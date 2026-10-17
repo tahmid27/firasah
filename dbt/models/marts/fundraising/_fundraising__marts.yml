@@ -24,7 +24,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ["justgiving", "launchgood"]
+              arguments:
+                values: ["justgiving", "launchgood"]
 
       - name: donation_date
         description: Timestamp the donation was made.

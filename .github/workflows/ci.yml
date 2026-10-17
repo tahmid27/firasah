@@ -1,0 +1,36 @@
+# Runs on every push to main and every pull request. Checks code quality and
+# that the dbt project fits together — without touching any real API or
+# BigQuery, so it needs no secrets.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10
+
+      - name: Install dependencies (exactly as locked)
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Formatting
+        run: uv run ruff format --check .
+
+      - name: Unit tests
+        run: uv run pytest -q
+
+      # Checks every model, ref, source and YAML file fits together. Uses a
+      # placeholder profile (ci/profiles.yml) — parse never connects to
+      # BigQuery. A full `dbt build` in CI needs a keyless GCP login
+      # (Workload Identity Federation), not set up yet.
+      - name: dbt parse
+        run: uv run dbt parse --project-dir dbt --profiles-dir ci --no-partial-parse

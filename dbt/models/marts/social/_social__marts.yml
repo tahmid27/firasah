@@ -24,7 +24,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ["tiktok", "instagram"]
+              arguments:
+                values: ["tiktok", "instagram"]
 
       - name: posted_at
         description: Timestamp the post was published.
@@ -93,7 +94,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ["tiktok", "instagram"]
+              arguments:
+                values: ["tiktok", "instagram"]
 
       - name: follower_count
         description: Follower count as of this ingestion run.

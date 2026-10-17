@@ -10,7 +10,7 @@ about it.
 
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
@@ -42,8 +42,8 @@ def parse_retry_after(
         except (TypeError, ValueError):
             return default
         if when.tzinfo is None:
-            when = when.replace(tzinfo=timezone.utc)
-        seconds = (when - datetime.now(timezone.utc)).total_seconds()
+            when = when.replace(tzinfo=UTC)
+        seconds = (when - datetime.now(UTC)).total_seconds()
     return min(max(seconds, 0.0), max_wait)
 
 
@@ -141,7 +141,7 @@ def load_raw_to_bigquery(rows: list[dict], table_id: str, tags: dict) -> None:
         print(f"WARNING: 0 rows to load into {table_id}; skipping load")
         return
 
-    ingested_at = datetime.now(timezone.utc).isoformat()
+    ingested_at = datetime.now(UTC).isoformat()
     tagged_rows = [{**row, **tags, "_ingested_at": ingested_at} for row in rows]
 
     client = bigquery.Client()

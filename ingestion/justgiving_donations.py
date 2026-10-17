@@ -145,7 +145,7 @@ def fetch_event_page_names(event_id: str) -> list[str]:
 
 
 def parse_event_ids(value: str) -> list[str]:
-    """"4100201, 4100202" -> ["4100201", "4100202"]. Blanks and repeats are
+    """ "4100201, 4100202" -> ["4100201", "4100202"]. Blanks and repeats are
     dropped (order kept), so a stray comma or a repeated ID is harmless."""
     ids = []
     for part in value.split(","):
@@ -197,12 +197,16 @@ def justgiving_donations_flow(event_ids: str) -> None:
             print(f"[justgiving] page {name} FAILED: {exc!r}")
             failures.append(f"page {name}")
             continue
-        print(f"Page {name!r}: {len(donations)} donations (event: {page.get('eventName')!r})")
+        print(
+            f"Page {name!r}: {len(donations)} donations (event: {page.get('eventName')!r})"
+        )
         fetched[name] = (donations, page)
 
     all_donations = [d for donations, _ in fetched.values() for d in donations]
     save_raw_json(all_donations, "data/raw/justgiving_donations.json")
-    save_raw_json([page for _, page in fetched.values()], "data/raw/justgiving_pages.json")
+    save_raw_json(
+        [page for _, page in fetched.values()], "data/raw/justgiving_pages.json"
+    )
 
     for name, (donations, page) in fetched.items():
         tags = {"_page_short_name": name}
