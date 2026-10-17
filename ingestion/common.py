@@ -55,6 +55,30 @@ def request_with_retries(
     raise RuntimeError(f"Exceeded {MAX_RETRIES} retries for {url}")
 
 
+def coerce_to_float(row: dict, dotted_paths: list[str]) -> dict:
+    """Forces the named fields (dotted paths into nested dicts, e.g.
+    "stats.open_rate") to float, in place; missing or null fields are left
+    alone.
+
+    Why: BigQuery schema autodetect types a column from the first values it
+    sees. A rate or money amount that happens to arrive as a whole number
+    (0, or 1 for 100%) gets typed INTEGER, and the first real fractional
+    value (0.43) then fails the load. Sending floats always keeps the
+    column FLOAT, whatever the first row is. Use it on any field that is
+    conceptually fractional but can arrive as a whole number.
+    """
+    for path in dotted_paths:
+        *parents, key = path.split(".")
+        node = row
+        for part in parents:
+            node = node.get(part) if isinstance(node, dict) else None
+            if node is None:
+                break
+        if isinstance(node, dict) and node.get(key) is not None:
+            node[key] = float(node[key])
+    return row
+
+
 def save_raw_json(data: list[dict], path: str | Path) -> None:
     """Dumps a fetch result to disk for local inspection before it's loaded
     to BigQuery. Not a Prefect task — no retry semantics needed for a local
