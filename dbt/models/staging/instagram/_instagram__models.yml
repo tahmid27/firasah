@@ -66,3 +66,47 @@ models:
         description: >
           Views. Only meaningful for video/Reels — old image and carousel
           posts report 0, which means "not measured", not "no one saw it".
+
+  - name: stg_instagram_account_insights_daily
+    description: >
+      Account-level daily totals from Instagram insights (via
+      raw_instagram_account_insights_daily). Thin rename layer, not
+      deduplicated: each run re-pulls recent days, so a date can appear
+      more than once. fct_social_account_daily keeps the latest pull per
+      day.
+    columns:
+      - name: account_id
+        description: Instagram Business Account ID.
+        tests:
+          - not_null
+
+      - name: insight_date
+        description: The day (UTC) the totals cover.
+        tests:
+          - not_null
+
+      - name: reach
+        description: Unique accounts that saw any of the account's content that day.
+
+  - name: stg_instagram_follower_demographics
+    description: >
+      Follower demographic buckets per pull (via
+      raw_instagram_follower_demographics). Not deduplicated — one set of
+      rows per ingestion run is the point.
+    columns:
+      - name: breakdown_type
+        description: Which split this row belongs to ("age", "gender", "country" or "city").
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["age", "gender", "country", "city"]
+
+      - name: breakdown_value
+        description: The bucket within that split (e.g. "18-24", "F", "GB", "Salford, England").
+        tests:
+          - not_null
+
+      - name: follower_count
+        description: Followers in that bucket.
+        tests:
+          - not_null
