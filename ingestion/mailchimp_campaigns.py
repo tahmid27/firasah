@@ -16,7 +16,12 @@ import httpx
 from dotenv import load_dotenv
 from prefect import flow, task
 
-from ingestion.common import load_raw_to_bigquery, request_with_retries, save_raw_json
+from ingestion.common import (
+    coerce_to_float,
+    load_raw_to_bigquery,
+    request_with_retries,
+    save_raw_json,
+)
 
 load_dotenv()
 
@@ -30,6 +35,29 @@ RAW_AUDIENCE_STATS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_audi
 RAW_LINK_CLICKS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_campaign_link_clicks"
 RAW_LIST_ACTIVITY_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_list_activity_daily"
 RAW_LIST_GROWTH_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_list_growth_monthly"
+
+
+# Fields that are fractional (rates) or money but can arrive as whole numbers
+# (0, or 1 for 100%) — see coerce_to_float for why they are forced to float.
+REPORT_FLOAT_FIELDS = [
+    "opens.open_rate",
+    "opens.proxy_excluded_open_rate",
+    "clicks.click_rate",
+    "list_stats.open_rate",
+    "list_stats.proxy_excluded_open_rate",
+    "list_stats.click_rate",
+    "list_stats.sub_rate",
+    "list_stats.unsub_rate",
+    "ecommerce.total_revenue",
+    "ecommerce.total_spent",
+]
+AUDIENCE_FLOAT_FIELDS = [
+    "stats.open_rate",
+    "stats.click_rate",
+    "stats.avg_sub_rate",
+    "stats.avg_unsub_rate",
+    "stats.target_sub_rate",
+]
 
 
 def _paginated_get(client: httpx.Client, path: str, items_key: str) -> list[dict]:
@@ -72,7 +100,7 @@ def fetch_campaign_reports() -> list[dict]:
             response = request_with_retries(
                 client, "GET", f"{BASE_URL}/reports/{campaign['id']}"
             )
-            reports.append(response.json())
+            reports.append(coerce_to_float(response.json(), REPORT_FLOAT_FIELDS))
 
     return reports
 
@@ -80,7 +108,8 @@ def fetch_campaign_reports() -> list[dict]:
 @task
 def fetch_audience_stats() -> list[dict]:
     with httpx.Client(auth=("anystring", API_KEY), timeout=30) as client:
-        return _paginated_get(client, "/lists", "lists")
+        audiences = _paginated_get(client, "/lists", "lists")
+    return [coerce_to_float(a, AUDIENCE_FLOAT_FIELDS) for a in audiences]
 
 
 def _strip_links(rows: list[dict]) -> list[dict]:

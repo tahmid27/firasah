@@ -17,13 +17,33 @@ import httpx
 from dotenv import load_dotenv
 from prefect import flow, task
 
-from ingestion.common import load_raw_to_bigquery, request_with_retries, save_raw_json
+from ingestion.common import (
+    coerce_to_float,
+    load_raw_to_bigquery,
+    request_with_retries,
+    save_raw_json,
+)
 
 load_dotenv()
 
 BASE_URL = "https://api.staging.justgiving.com"
 APP_ID = os.environ["JUSTGIVING_APP_ID"]
 PAGE_SIZE = 100
+
+# Money and ratio fields JustGiving sends as strings ("210", "200.0") that
+# may or may not have a decimal point. Without a decimal point autodetect
+# types the column INTEGER and the first fractional value (£1,250.50) would
+# then fail the load — see coerce_to_float in ingestion/common.py.
+DONATION_FLOAT_FIELDS = ["amount", "donorLocalAmount"]
+PAGE_FLOAT_FIELDS = [
+    "fundraisingTarget",
+    "totalRaisedPercentageOfFundraisingTarget",
+    "totalRaisedOffline",
+    "totalRaisedOnline",
+    "totalRaisedSms",
+    "grandTotalRaisedExcludingGiftAid",
+    "totalEstimatedGiftAid",
+]
 
 RAW_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_justgiving_donations"
 RAW_PAGES_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_justgiving_pages"
@@ -46,7 +66,9 @@ def fetch_donations(page_short_name: str) -> list[dict]:
                 params={"pageNumber": page_number, "pageSize": PAGE_SIZE},
             )
             body = response.json()
-            donations.extend(body["donations"])
+            donations.extend(
+                coerce_to_float(d, DONATION_FLOAT_FIELDS) for d in body["donations"]
+            )
 
             total_pages = body["pagination"]["totalPages"]
             print(
@@ -87,7 +109,7 @@ def fetch_page_details(page_short_name: str) -> dict:
     }
     charity = body.get("charity") or {}
     page["charity"] = {"id": charity.get("id"), "name": charity.get("name")}
-    return page
+    return coerce_to_float(page, PAGE_FLOAT_FIELDS)
 
 
 @task

@@ -19,7 +19,12 @@ import httpx
 from dotenv import load_dotenv
 from prefect import flow, task
 
-from ingestion.common import load_raw_to_bigquery, request_with_retries, save_raw_json
+from ingestion.common import (
+    coerce_to_float,
+    load_raw_to_bigquery,
+    request_with_retries,
+    save_raw_json,
+)
 
 load_dotenv()
 
@@ -155,7 +160,9 @@ def fetch_media_insights(media: list[dict]) -> list[dict]:
             row = {"media_id": media_id}
             for metric in response.json()["data"]:
                 row[metric["name"]] = metric["values"][0]["value"]
-            insights.append(row)
+            # A percentage that can arrive as a whole number (e.g. 5); see
+            # coerce_to_float for why it must stay a float.
+            insights.append(coerce_to_float(row, ["reels_skip_rate"]))
 
     print(f"Fetched insights for {len(insights)} posts ({skipped} skipped)")
     return insights
