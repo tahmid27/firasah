@@ -99,7 +99,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ["age", "gender", "country", "city"]
+              arguments:
+                values: ["age", "gender", "country", "city"]
 
       - name: breakdown_value
         description: The bucket within that split (e.g. "18-24", "F", "GB", "Salford, England").

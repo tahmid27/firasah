@@ -51,7 +51,7 @@ Three ideas hold it together:
 
 Where only one platform offers a metric (TikTok views, LaunchGood Zakat amount), the unified table keeps the column and leaves the other platform's rows null rather than dropping the data.
 
-Tests: `not_null`, `unique`, `accepted_values` and `relationships` tests across the layers (50+ in total), plus generated dbt docs.
+Tests: `not_null`, `unique`, `accepted_values` and `relationships` tests across the layers (100+ in total), plus generated dbt docs.
 
 ## Problems worth reading about
 
@@ -83,12 +83,25 @@ uv run python -m ingestion.mailchimp_campaigns
 uv run dbt build --project-dir dbt --profiles-dir ~/.dbt
 ```
 
+Checks (the same ones CI runs on every push, see `.github/workflows/ci.yml`):
+
+```bash
+uv run ruff check .          # lint
+uv run ruff format --check . # formatting
+uv run pytest                # unit tests: retries, rate-limit parsing, .env rewriting, type coercion
+uv run dbt parse --project-dir dbt --profiles-dir ci   # dbt project compiles, no warehouse needed
+```
+
+CI deliberately needs no secrets: unit tests use a fake HTTP transport instead of real APIs, and `dbt parse` never connects to BigQuery. Running the full `dbt build` in CI is the next step (it needs a keyless GCP login via Workload Identity Federation).
+
 One failing source doesn't stop the others: each connector is isolated, dbt runs on whatever landed, and the flow fails at the end naming the sources that broke. LaunchGood is only loaded when its export file has changed.
 
 ## Repo layout
 
 ```
 ingestion/    connectors (one per source), shared retry/landing helpers, refresh flow
+tests/        pytest unit tests for the shared ingestion helpers
+ci/           placeholder dbt profile used by CI
 dbt/          staging, snapshots, intermediate, marts, tests and docs
 scripts/      one-off auth helpers (token exchanges), not part of the pipeline
 main.py       FastAPI app (health check only so far)
@@ -97,7 +110,7 @@ CLAUDE.md     working notes and decision log, with dates and reasoning
 
 ## Status
 
-- **Done:** ingestion for all five sources, the modelling layers, tests and docs, scheduled refresh.
+- **Done:** ingestion for all five sources, the modelling layers, dbt tests and docs, scheduled refresh, unit tests and CI.
 - **Next:** FastAPI layer with per-charity data isolation, then the dashboard (Next.js + Recharts).
 - **Later:** billing, deployment, and an agent layer for weekly reports.
 - **Known limitations:** single-charity today; no currency conversion (test data is all GBP); LaunchGood refunds aren't detected yet; growth charts only have history from the first pull onwards; scheduling runs locally until deployment.

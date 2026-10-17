@@ -67,8 +67,13 @@ def _mark_launchgood_loaded() -> None:
 @task
 def run_dbt(command: str) -> None:
     """Runs a dbt command; a non-zero exit (failed model/test) fails the task."""
+    # check=False on purpose: the exit code is checked below, after
+    # printing dbt's own output, so the failure reason is visible
     result = subprocess.run(
-        ["uv", "run", "dbt", command, *DBT_ARGS], capture_output=True, text=True
+        ["uv", "run", "dbt", command, *DBT_ARGS],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     print(result.stdout)
     if result.returncode != 0:

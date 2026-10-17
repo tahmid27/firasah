@@ -29,8 +29,9 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('fct_mailchimp_audience_stats')
-              field: list_id
+              arguments:
+                to: ref('fct_mailchimp_audience_stats')
+                field: list_id
 
   - name: fct_mailchimp_audience_stats
     description: >

@@ -1,0 +1,14 @@
+# dbt profile for CI only. `dbt parse` checks that every model, ref, source
+# and YAML file fits together WITHOUT connecting to BigQuery, so the values
+# here are placeholders and no credentials are needed. A full `dbt build`
+# in CI would need a real (keyless) login — not set up yet, see CLAUDE.md.
+firasah:
+  target: ci
+  outputs:
+    ci:
+      type: bigquery
+      method: oauth
+      project: ci-placeholder-project
+      dataset: ci_placeholder
+      location: europe-west2
+      threads: 1

@@ -36,7 +36,9 @@ VIDEO_FIELDS = (
     "id,title,video_description,create_time,duration,cover_image_url,"
     "share_url,view_count,like_count,comment_count,share_count"
 )
-USER_FIELDS = "open_id,display_name,follower_count,following_count,likes_count,video_count"
+USER_FIELDS = (
+    "open_id,display_name,follower_count,following_count,likes_count,video_count"
+)
 
 RAW_VIDEOS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_tiktok_videos"
 RAW_USER_INFO_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_tiktok_user_info"

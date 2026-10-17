@@ -13,7 +13,7 @@ landing step are shared — see ingestion/common.py.
 
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from dotenv import load_dotenv
@@ -97,7 +97,9 @@ def fetch_media(ig_user_id: str) -> list[dict]:
             response = request_with_retries(client, "GET", url, params=params)
             body = response.json()
             media.extend(body["data"])
-            print(f"Fetched {len(body['data'])} media items (total so far: {len(media)})")
+            print(
+                f"Fetched {len(body['data'])} media items (total so far: {len(media)})"
+            )
 
             next_url = body.get("paging", {}).get("next")
             if not next_url:
@@ -177,7 +179,7 @@ def fetch_account_insights_daily(ig_user_id: str, days: int) -> list[dict]:
     — dbt keeps the latest pull per day. Instagram can lag up to 48 hours,
     which is also why overlapping windows are worth re-pulling.
     """
-    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
     rows = []
 
     with httpx.Client(timeout=30) as client:
@@ -232,7 +234,9 @@ def fetch_follower_demographics(ig_user_id: str) -> list[dict]:
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code != 400:
                     raise
-                print(f"No follower demographics by {breakdown}: {exc.response.text[:200]}")
+                print(
+                    f"No follower demographics by {breakdown}: {exc.response.text[:200]}"
+                )
                 continue
 
             for data in response.json()["data"]:

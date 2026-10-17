@@ -30,11 +30,21 @@ DATA_CENTER = API_KEY.split("-")[-1]
 BASE_URL = f"https://{DATA_CENTER}.api.mailchimp.com/3.0"
 PAGE_SIZE = 100
 
-RAW_CAMPAIGN_REPORTS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_campaign_reports"
-RAW_AUDIENCE_STATS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_audience_stats"
-RAW_LINK_CLICKS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_campaign_link_clicks"
-RAW_LIST_ACTIVITY_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_list_activity_daily"
-RAW_LIST_GROWTH_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_list_growth_monthly"
+RAW_CAMPAIGN_REPORTS_TABLE_ID = (
+    "firasah-dev-511916.firasah_dev.raw_mailchimp_campaign_reports"
+)
+RAW_AUDIENCE_STATS_TABLE_ID = (
+    "firasah-dev-511916.firasah_dev.raw_mailchimp_audience_stats"
+)
+RAW_LINK_CLICKS_TABLE_ID = (
+    "firasah-dev-511916.firasah_dev.raw_mailchimp_campaign_link_clicks"
+)
+RAW_LIST_ACTIVITY_TABLE_ID = (
+    "firasah-dev-511916.firasah_dev.raw_mailchimp_list_activity_daily"
+)
+RAW_LIST_GROWTH_TABLE_ID = (
+    "firasah-dev-511916.firasah_dev.raw_mailchimp_list_growth_monthly"
+)
 
 
 # Fields that are fractional (rates) or money but can arrive as whole numbers
@@ -69,7 +79,10 @@ def _paginated_get(client: httpx.Client, path: str, items_key: str) -> list[dict
 
     while True:
         response = request_with_retries(
-            client, "GET", f"{BASE_URL}{path}", params={"count": PAGE_SIZE, "offset": offset}
+            client,
+            "GET",
+            f"{BASE_URL}{path}",
+            params={"count": PAGE_SIZE, "offset": offset},
         )
         body = response.json()
         items.extend(body[items_key])
