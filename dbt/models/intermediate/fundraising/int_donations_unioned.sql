@@ -1,13 +1,33 @@
-with justgiving as (
+with latest_justgiving_pages as (
+
+    -- stg_justgiving_pages is one row per page per pull (target and
+    -- running totals change), so take the latest row per page
+    select *
+    from {{ ref('stg_justgiving_pages') }}
+    qualify row_number() over (partition by page_short_name order by ingested_at desc) = 1
+
+),
+
+justgiving as (
 
     select
         'justgiving' as source,
-        cast(donation_id as string) as source_donation_id,
-        donation_date,
-        amount,
-        currency_code,
-        donor_name,
-        page_short_name as campaign_name,
+        cast(d.donation_id as string) as source_donation_id,
+        d.donation_date,
+        d.amount,
+        d.currency_code,
+        d.donor_name,
+        -- JustGiving donations belong to an individual fundraising page;
+        -- the larger event/appeal the page sits under comes from the page
+        -- details pull
+        coalesce(p.page_title, d.page_short_name) as fundraiser_name,
+        p.event_name as project_name,
+        d.traffic_source,
+        cast(null as bool) as is_online,
+        coalesce(
+            d.donor_name is null or lower(trim(d.donor_name)) in ('', 'anonymous'),
+            true
+        ) as is_anonymous,
         cast(null as bool) as is_gift_aid,
         cast(null as bool) as is_zakat,
         -- JustGiving's donations endpoint doesn't expose any of these —
@@ -21,8 +41,10 @@ with justgiving as (
 
     -- Refund-aware: only donations still present as of the last snapshot
     -- run. See justgiving_donations_snapshot for how that's detected.
-    from {{ ref('justgiving_donations_snapshot') }}
-    where dbt_valid_to is null
+    from {{ ref('justgiving_donations_snapshot') }} as d
+    left join latest_justgiving_pages as p
+        on d.page_short_name = p.page_short_name
+    where d.dbt_valid_to is null
 
 ),
 
@@ -35,7 +57,18 @@ launchgood as (
         amount,
         currency_code,
         donor_display_name as donor_name,
-        campaign_name,
+        -- LaunchGood's campaign_name is the individual fundraiser page;
+        -- community_name is the larger project it belongs to
+        campaign_name as fundraiser_name,
+        community_name as project_name,
+        traffic_source,
+        is_online,
+        coalesce(
+            donor_visibility = 'Anonymous Donor'
+                or donor_display_name is null
+                or lower(trim(donor_display_name)) in ('', 'anonymous'),
+            true
+        ) as is_anonymous,
         is_gift_aid,
         is_zakat,
         zakat_amount,
@@ -82,8 +115,13 @@ select
     donation_date,
     amount,
     currency_code,
-    donor_name,
-    campaign_name,
+    -- A missing or placeholder name means an anonymous donor, not bad data
+    if(is_anonymous, 'Anonymous', donor_name) as donor_name,
+    is_anonymous,
+    fundraiser_name,
+    project_name,
+    traffic_source,
+    is_online,
     is_gift_aid,
     is_zakat,
     zakat_amount,

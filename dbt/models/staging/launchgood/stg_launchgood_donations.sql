@@ -12,7 +12,7 @@ renamed as (
         created_time_utc as donation_time,
         status,
         transaction_type,
-        offline_or_online_donation as donation_channel,
+        offline_or_online_donation = 'online' as is_online,
         donation_currency_dc as currency_code,
         -- CSV-sourced columns land as empty strings for a blank cell, not
         -- SQL null (unlike JustGiving's JSON API, where a missing field is
@@ -32,7 +32,7 @@ renamed as (
         gift_aid_yes_or_no as is_gift_aid,
         zakat_yes_or_no as is_zakat,
         safe_cast(zakat_amount_in_donation_currency as numeric) as zakat_amount,
-        source as donation_source,
+        source as traffic_source,
         payment_type,
         safe_cast(total_processing_fees_paid_by_cc_in_settled_currency as numeric) as processing_fees,
         safe_cast(total_online_donations_net_amount_in_settled_currency as numeric) as net_amount,

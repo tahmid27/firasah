@@ -18,7 +18,7 @@ renamed as (
         timestamp_millis(cast(regexp_extract(donationDate, r'\d+') as int64)) as donation_date,
         charityId as charity_id,
         message as donor_message,
-        source as donation_channel,
+        source as traffic_source,
         donationRef as donation_reference,
         thirdPartyReference as third_party_reference,
         _page_short_name as page_short_name,

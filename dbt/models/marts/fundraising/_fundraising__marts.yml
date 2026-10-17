@@ -41,6 +41,46 @@ models:
         tests:
           - not_null
 
+      - name: donor_name
+        description: >
+          Donor display name; "Anonymous" for anonymous donors (missing,
+          blank or placeholder names, or LaunchGood's anonymous-donor
+          setting) so the column is always filled.
+        tests:
+          - not_null
+
+      - name: is_anonymous
+        description: >
+          True if the donor is anonymous. Anonymous donors should be
+          excluded from any named-donor list or donor-level analysis.
+        tests:
+          - not_null
+
+      - name: fundraiser_name
+        description: >
+          The individual fundraising page the donation went to (JustGiving
+          page title, or LaunchGood campaign name). Ranks fundraisers within
+          a project.
+        tests:
+          - not_null
+
+      - name: project_name
+        description: >
+          The larger project or appeal the fundraiser belongs to (JustGiving
+          event name, or LaunchGood community name). Groups fundraisers so a
+          whole project can be tracked and drilled into.
+
+      - name: traffic_source
+        description: >
+          How the donation arrived, as each platform labels it (JustGiving
+          `source`, LaunchGood `source`). Labels are platform-specific, not
+          harmonised into shared categories.
+
+      - name: is_online
+        description: >
+          Whether the donation was made online (true) or offline (false).
+          LaunchGood only — null for JustGiving.
+
       - name: zakat_amount
         description: >
           Portion of the donation given as Zakat, in currency_code. LaunchGood
