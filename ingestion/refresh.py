@@ -11,6 +11,7 @@ Run on a schedule:  uv run python -m ingestion.refresh --serve
 """
 
 import hashlib
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -77,9 +78,12 @@ def run_dbt(command: str) -> None:
 
 @flow(name="firasah-refresh")
 def firasah_refresh_flow(
-    page_short_name: str = "example-fundraising-page",
-    ig_user_id: str = "17840000000000000",
+    page_short_name: str | None = None,
+    ig_user_id: str | None = None,
 ) -> None:
+    # Defaults come from .env so no account identifiers live in source code
+    page_short_name = page_short_name or os.environ["JUSTGIVING_PAGE_SHORT_NAME"]
+    ig_user_id = ig_user_id or os.environ["INSTAGRAM_USER_ID"]
     failures: list[str] = []
 
     _run_source(
