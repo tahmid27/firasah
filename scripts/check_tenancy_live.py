@@ -201,6 +201,30 @@ def check_api(member: str, no_org: str, temp: str, temp_user_id: str) -> None:
     r = me(member, params={"org_id": TEMP_ORG}, headers={"X-Org-Id": TEMP_ORG})
     check("API: smuggled org_id is ignored", r.json().get("org_id") == "test_charity")
 
+    for path in (
+        "/fundraising/summary",
+        "/fundraising/income-over-time",
+        "/fundraising/fundraisers",
+        "/social/followers-over-time",
+        "/email/campaigns",
+    ):
+        ok = api.get(path, headers={"Authorization": f"Bearer {member}"})
+        check(
+            f"API: {path} serves the member's data",
+            ok.status_code == 200,
+            ok.status_code,
+        )
+        empty = api.get(path, headers={"Authorization": f"Bearer {temp}"}).json()
+        if "this_month" in empty:
+            nothing = (
+                empty["this_month"]["donations"]
+                == 0
+                == empty["last_month"]["donations"]
+            )
+        else:
+            nothing = empty.get("rows", empty.get("series")) == []
+        check(f"API: {path} gives the other org none of it", nothing, str(empty)[:120])
+
 
 def cleanup(temp_user_id: str | None) -> None:
     if temp_user_id:
