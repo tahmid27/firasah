@@ -1,5 +1,6 @@
 """The only path from the API to BigQuery; every query is scoped to the caller's org."""
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -234,23 +235,86 @@ def _check_column(mart: str, column: str) -> str:
     return column
 
 
+_ALIAS = re.compile(r"^[a-z_][a-z0-9_]{0,40}$")
+_GRAINS = {"day": "DAY", "week": "WEEK(MONDAY)", "month": "MONTH"}
+_AGGREGATES = {"sum", "count", "avg", "min", "max", "count_distinct"}
+
+
+@dataclass(frozen=True)
+class Bucket:
+    """A date or timestamp column truncated to the start of its day/week/month."""
+
+    column: str
+    grain: str
+    alias: str
+
+
+@dataclass(frozen=True)
+class Agg:
+    func: str
+    column: str  # "*" only with count
+    alias: str
+
+
+SelectItem = str | Bucket | Agg
+
+
+def _check_alias(alias: str) -> str:
+    if not _ALIAS.match(alias):
+        raise ValueError(f"invalid alias: {alias!r}")
+    return alias
+
+
+def _select_sql(mart: str, item: SelectItem) -> str:
+    if isinstance(item, str):
+        return _check_column(mart, item)
+    if isinstance(item, Bucket):
+        if item.grain not in _GRAINS:
+            raise ValueError(f"grain {item.grain!r} is not allowed")
+        column = _check_column(mart, item.column)
+        return f"date_trunc(date({column}), {_GRAINS[item.grain]}) as {_check_alias(item.alias)}"
+    if isinstance(item, Agg):
+        if item.func not in _AGGREGATES:
+            raise ValueError(f"aggregate {item.func!r} is not allowed")
+        if item.column == "*":
+            if item.func != "count":
+                raise ValueError("only count may use *")
+            inner = "*"
+        else:
+            inner = _check_column(mart, item.column)
+        if item.func == "count_distinct":
+            expression = f"count(distinct {inner})"
+        else:
+            expression = f"{item.func}({inner})"
+        return f"{expression} as {_check_alias(item.alias)}"
+    raise ValueError(f"unsupported select item: {item!r}")
+
+
+def _output_name(item: SelectItem) -> str:
+    return item if isinstance(item, str) else item.alias
+
+
 def build_query(
     settings: Settings,
     ctx: OrgContext,
     mart: str,
-    columns: Sequence[str],
+    columns: Sequence[SelectItem],
     *,
     filters: Sequence[Filter] = (),
     order_by: Sequence[tuple[str, str]] = (),
     limit: int | None = None,
 ) -> tuple[str, list[bigquery.ScalarQueryParameter]]:
-    """Returns (sql, parameters) without running anything."""
+    """Returns (sql, parameters) without running anything. With any Agg in
+    `columns`, the other items become the group-by keys."""
     if mart not in MARTS:
         raise ValueError(f"unknown mart: {mart!r}")
     if not columns:
         raise ValueError("at least one column is required")
 
-    select = ", ".join(_check_column(mart, c) for c in columns)
+    select = ", ".join(_select_sql(mart, item) for item in columns)
+    names = [_output_name(item) for item in columns]
+    if len(set(names)) != len(names):
+        raise ValueError("duplicate output names")
     table = f"`{settings.bigquery_project}.{settings.bigquery_dataset}.{mart}`"
 
     where = ["org_id = @org_id"]
@@ -265,12 +329,23 @@ def build_query(
 
     sql = f"select {select} from {table} where {' and '.join(where)}"
 
+    if any(isinstance(item, Agg) for item in columns):
+        keys = [
+            str(position)
+            for position, item in enumerate(columns, start=1)
+            if not isinstance(item, Agg)
+        ]
+        if keys:
+            sql += " group by " + ", ".join(keys)
+
     if order_by:
         parts = []
         for column, direction in order_by:
             if direction.lower() not in ("asc", "desc"):
                 raise ValueError(f"sort direction {direction!r} is not allowed")
-            parts.append(f"{_check_column(mart, column)} {direction.lower()}")
+            if column not in names:
+                _check_column(mart, column)
+            parts.append(f"{column} {direction.lower()}")
         sql += " order by " + ", ".join(parts)
 
     if limit is not None:
@@ -284,7 +359,7 @@ def build_query(
 def query_mart(
     ctx: OrgContext,
     mart: str,
-    columns: Sequence[str],
+    columns: Sequence[SelectItem],
     *,
     executor: QueryExecutor,
     settings: Settings,
