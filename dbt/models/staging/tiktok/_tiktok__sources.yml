@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: tiktok
     description: Raw TikTok data landed by the Python ingestion script (ingestion/tiktok_videos.py) via the TikTok Display API. Not loaded through dbt.
-    database: firasah-dev
+    database: firasah-dev-511916
     schema: firasah_dev
     tables:
       - name: raw_tiktok_videos

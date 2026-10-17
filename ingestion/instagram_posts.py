@@ -25,8 +25,8 @@ load_dotenv()
 ACCESS_TOKEN = os.environ["INSTAGRAM_ACCESS_TOKEN"]
 BASE_URL = "https://graph.facebook.com/v26.0"
 
-RAW_MEDIA_TABLE_ID = "firasah-dev.firasah_dev.raw_instagram_media"
-RAW_ACCOUNT_INFO_TABLE_ID = "firasah-dev.firasah_dev.raw_instagram_account_info"
+RAW_MEDIA_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_instagram_media"
+RAW_ACCOUNT_INFO_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_instagram_account_info"
 
 
 @task

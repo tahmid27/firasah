@@ -25,7 +25,7 @@ BASE_URL = "https://api.staging.justgiving.com"
 APP_ID = os.environ["JUSTGIVING_APP_ID"]
 PAGE_SIZE = 100
 
-RAW_TABLE_ID = "firasah-dev.firasah_dev.raw_justgiving_donations"
+RAW_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_justgiving_donations"
 
 
 @task

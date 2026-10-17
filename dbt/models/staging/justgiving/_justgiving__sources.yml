@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: justgiving
     description: Raw JustGiving data landed by the Python ingestion script (ingestion/justgiving_donations.py) — not loaded through dbt.
-    database: firasah-dev
+    database: firasah-dev-511916
     schema: firasah_dev
     tables:
       - name: raw_justgiving_donations
