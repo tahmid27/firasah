@@ -34,6 +34,11 @@ models:
         tests:
           - not_null
 
+      - name: media_product_type
+        description: >
+          Instagram's surface the post was published to ("FEED" or "REELS") —
+          the Reels-vs-feed split. Null for TikTok rows (not applicable).
+
   - name: fct_social_account_stats
     description: >
       One row per account per ingestion run across every social platform

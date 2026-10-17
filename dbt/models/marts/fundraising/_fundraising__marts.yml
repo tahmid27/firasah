@@ -40,3 +40,30 @@ models:
         description: ISO currency code for the donation amount.
         tests:
           - not_null
+
+      - name: zakat_amount
+        description: >
+          Portion of the donation given as Zakat, in currency_code. LaunchGood
+          only — null for JustGiving, and null for non-Zakat LaunchGood
+          donations.
+
+      - name: processing_fees
+        description: >
+          Card processing fees deducted, in settlement_currency (not
+          currency_code). LaunchGood only — null for JustGiving.
+
+      - name: net_amount
+        description: >
+          What the charity actually receives after fees, in
+          settlement_currency (not currency_code). LaunchGood only — null for
+          JustGiving.
+
+      - name: settlement_currency
+        description: >
+          Currency processing_fees and net_amount are paid out in. LaunchGood
+          only — null for JustGiving.
+
+      - name: has_marketing_consent
+        description: >
+          Whether the donor opted in to marketing contact. LaunchGood only —
+          null for JustGiving (not exposed by its donations endpoint).
