@@ -37,9 +37,20 @@ models:
           - not_null
 
       - name: currency_code
-        description: ISO currency code for the donation amount.
+        description: >
+          ISO currency code for the donation amount. Amounts are NOT
+          converted: every total in the mart assumes GBP, which the warning
+          test below enforces — see CLAUDE.md for the pending conversion
+          decision.
         tests:
           - not_null
+          # Warns (does not fail) the moment a non-GBP donation appears, so
+          # totals can't silently mix currencies before conversion exists.
+          - accepted_values:
+              arguments:
+                values: ["GBP"]
+              config:
+                severity: warn
 
       - name: donor_name
         description: >

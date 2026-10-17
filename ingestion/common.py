@@ -11,6 +11,7 @@ about it.
 import json
 import time
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 import httpx
@@ -18,6 +19,32 @@ from google.cloud import bigquery
 from prefect import task
 
 MAX_RETRIES = 5
+
+
+def parse_retry_after(
+    value: str | None, default: float, max_wait: float = 120.0
+) -> float:
+    """Seconds to wait before retrying, from a Retry-After header.
+
+    HTTP allows two forms: a number of seconds ("30") or a date ("Wed, 21
+    Oct 2026 07:28:00 GMT"). Anything unreadable falls back to `default`,
+    and the wait is capped at `max_wait` so one odd header can't stall a
+    whole refresh for an hour — if the API really needs longer, the retries
+    run out and the failure is reported instead.
+    """
+    if value is None:
+        return default
+    try:
+        seconds = float(value)
+    except ValueError:
+        try:
+            when = parsedate_to_datetime(value)
+        except (TypeError, ValueError):
+            return default
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+        seconds = (when - datetime.now(timezone.utc)).total_seconds()
+    return min(max(seconds, 0.0), max_wait)
 
 
 def request_with_retries(
@@ -39,8 +66,9 @@ def request_with_retries(
             continue
 
         if response.status_code == 429:
-            retry_after = int(response.headers.get("Retry-After", 2**attempt))
-            time.sleep(retry_after)
+            time.sleep(
+                parse_retry_after(response.headers.get("Retry-After"), 2**attempt)
+            )
             continue
 
         if response.status_code >= 500:
