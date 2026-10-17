@@ -17,9 +17,10 @@ models:
           - not_null
 
       - name: donor_name
-        description: Display name of the donor (may be "Anonymous").
-        tests:
-          - not_null
+        description: >
+          Display name of the donor, as sent by JustGiving (may be
+          "Anonymous" or null). Missing names are handled in
+          int_donations_unioned, not here.
 
       - name: amount
         description: Donation amount, in the currency given by currency_code.
@@ -38,5 +39,33 @@ models:
 
       - name: charity_id
         description: JustGiving charity ID the donation was made to.
+        tests:
+          - not_null
+
+      - name: traffic_source
+        description: >
+          How the donation reached JustGiving, as JustGiving labels it
+          (raw field `source`, e.g. "SponsoredDonationCampaign").
+
+  - name: stg_justgiving_pages
+    description: >
+      One row per fundraising page per ingestion run, cleaned and typed
+      (via raw_justgiving_pages). Not deduplicated: the target and running
+      totals change between pulls. int_donations_unioned takes the latest
+      row per page.
+    columns:
+      - name: page_short_name
+        description: URL slug of the fundraising page; matches stg_justgiving_donations.page_short_name.
+        tests:
+          - not_null
+
+      - name: page_title
+        description: Title the page owner gave the page.
+
+      - name: event_id
+        description: ID of the JustGiving event/appeal the page belongs to (the larger project above individual pages).
+
+      - name: event_name
+        description: Name of that event/appeal.
         tests:
           - not_null

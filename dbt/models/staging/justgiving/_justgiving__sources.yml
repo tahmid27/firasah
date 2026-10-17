@@ -13,3 +13,12 @@ sources:
           tagged with _ingested_at, so the same donation can appear multiple
           times across runs. Not deduplicated at this layer on purpose.
         loaded_at_field: _ingested_at
+
+      - name: raw_justgiving_pages
+        description: >
+          Raw page-level details for a JustGiving fundraising page (owner,
+          parent event, status, fundraising target, running totals), landed
+          by the same ingestion flow as the donations. Append-only — one row
+          per page per run, because the target and totals change over time.
+          Only scalar fields are landed; see fetch_page_details.
+        loaded_at_field: _ingested_at

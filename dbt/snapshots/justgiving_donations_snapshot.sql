@@ -5,7 +5,7 @@
         target_schema='firasah_dev',
         unique_key='donation_id',
         strategy='check',
-        check_cols=['amount', 'currency_code', 'donation_channel'],
+        check_cols=['amount', 'currency_code', 'traffic_source'],
         invalidate_hard_deletes=True,
     )
 }}
@@ -38,7 +38,7 @@ select
     currency_code,
     donation_date,
     charity_id,
-    donation_channel,
+    traffic_source,
     page_short_name
 from {{ ref('stg_justgiving_donations') }}
 qualify dense_rank() over (partition by page_short_name order by ingested_at desc) = 1
