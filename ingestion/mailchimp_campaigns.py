@@ -27,6 +27,9 @@ PAGE_SIZE = 100
 
 RAW_CAMPAIGN_REPORTS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_campaign_reports"
 RAW_AUDIENCE_STATS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_audience_stats"
+RAW_LINK_CLICKS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_campaign_link_clicks"
+RAW_LIST_ACTIVITY_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_list_activity_daily"
+RAW_LIST_GROWTH_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_mailchimp_list_growth_monthly"
 
 
 def _paginated_get(client: httpx.Client, path: str, items_key: str) -> list[dict]:
@@ -80,6 +83,59 @@ def fetch_audience_stats() -> list[dict]:
         return _paginated_get(client, "/lists", "lists")
 
 
+def _strip_links(rows: list[dict]) -> list[dict]:
+    """Mailchimp attaches a `_links` array (API navigation URLs) to every
+    record. Nothing uses it, so it is dropped rather than landed."""
+    return [{k: v for k, v in row.items() if k != "_links"} for row in rows]
+
+
+@task
+def fetch_link_clicks(campaign_ids: list[str]) -> list[dict]:
+    """Which links in each sent campaign were clicked, and how often."""
+    rows = []
+    with httpx.Client(auth=("anystring", API_KEY), timeout=30) as client:
+        for campaign_id in campaign_ids:
+            rows.extend(
+                _paginated_get(
+                    client, f"/reports/{campaign_id}/click-details", "urls_clicked"
+                )
+            )
+    rows = _strip_links(rows)
+    # Ratios are fractions, but Mailchimp sends a whole-number 1 when a link
+    # got 100% of clicks — and schema autodetect would then type the whole
+    # column INTEGER, so the next fractional value (0.5) would fail the
+    # load. Forcing float keeps the column FLOAT whatever the first row is.
+    for row in rows:
+        for field in ("click_percentage", "unique_click_percentage"):
+            row[field] = float(row[field])
+    return rows
+
+
+@task
+def fetch_list_activity(list_ids: list[str]) -> list[dict]:
+    """Daily subscribes, unsubscribes and email activity per audience.
+    Mailchimp returns a rolling window of recent days, so every run re-pulls
+    overlapping days — dbt keeps the latest pull per day."""
+    rows = []
+    with httpx.Client(auth=("anystring", API_KEY), timeout=30) as client:
+        for list_id in list_ids:
+            for row in _paginated_get(client, f"/lists/{list_id}/activity", "activity"):
+                rows.append({"list_id": list_id, **row})
+    return rows
+
+
+@task
+def fetch_list_growth(list_ids: list[str]) -> list[dict]:
+    """Monthly subscriber growth per audience."""
+    rows = []
+    with httpx.Client(auth=("anystring", API_KEY), timeout=30) as client:
+        for list_id in list_ids:
+            rows.extend(
+                _paginated_get(client, f"/lists/{list_id}/growth-history", "history")
+            )
+    return _strip_links(rows)
+
+
 @flow(name="mailchimp-campaigns-ingestion")
 def mailchimp_campaigns_flow() -> None:
     reports = fetch_campaign_reports()
@@ -91,6 +147,24 @@ def mailchimp_campaigns_flow() -> None:
     print(f"Total audiences fetched: {len(audiences)}")
     save_raw_json(audiences, "data/raw/mailchimp_audience_stats.json")
     load_raw_to_bigquery(audiences, RAW_AUDIENCE_STATS_TABLE_ID, tags={})
+
+    campaign_ids = [r["id"] for r in reports]
+    list_ids = [a["id"] for a in audiences]
+
+    link_clicks = fetch_link_clicks(campaign_ids)
+    print(f"Total link-click rows fetched: {len(link_clicks)}")
+    save_raw_json(link_clicks, "data/raw/mailchimp_campaign_link_clicks.json")
+    load_raw_to_bigquery(link_clicks, RAW_LINK_CLICKS_TABLE_ID, tags={})
+
+    activity = fetch_list_activity(list_ids)
+    print(f"Total daily audience-activity rows fetched: {len(activity)}")
+    save_raw_json(activity, "data/raw/mailchimp_list_activity_daily.json")
+    load_raw_to_bigquery(activity, RAW_LIST_ACTIVITY_TABLE_ID, tags={})
+
+    growth = fetch_list_growth(list_ids)
+    print(f"Total monthly growth rows fetched: {len(growth)}")
+    save_raw_json(growth, "data/raw/mailchimp_list_growth_monthly.json")
+    load_raw_to_bigquery(growth, RAW_LIST_GROWTH_TABLE_ID, tags={})
 
 
 if __name__ == "__main__":

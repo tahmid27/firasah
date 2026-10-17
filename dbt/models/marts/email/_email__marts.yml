@@ -47,3 +47,74 @@ models:
         description: Subscriber count as of this ingestion run.
         tests:
           - not_null
+
+  - name: fct_mailchimp_link_clicks
+    description: >
+      One row per link per campaign: which links in each email were
+      clicked, with total and unique click counts. Latest pull per link.
+    columns:
+      - name: link_click_id
+        description: Campaign ID plus link ID.
+        tests:
+          - unique
+          - not_null
+
+      - name: campaign_id
+        description: Campaign the link was in.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_mailchimp_campaigns')
+                field: campaign_id
+
+      - name: url
+        description: Link destination.
+        tests:
+          - not_null
+
+  - name: fct_mailchimp_audience_daily
+    description: >
+      One row per audience per day: subscribes, unsubscribes, net change
+      and email activity. Latest pull per day. Use for a daily growth chart.
+    columns:
+      - name: audience_day_id
+        description: Audience ID plus date.
+        tests:
+          - unique
+          - not_null
+
+      - name: list_id
+        description: Audience the day belongs to.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_mailchimp_audience_stats')
+                field: list_id
+
+      - name: activity_date
+        description: The day the activity happened.
+        tests:
+          - not_null
+
+  - name: fct_mailchimp_audience_monthly
+    description: >
+      One row per audience per month: monthly list growth. Latest pull per
+      month.
+    columns:
+      - name: audience_month_id
+        description: Audience ID plus first day of the month.
+        tests:
+          - unique
+          - not_null
+
+      - name: list_id
+        description: Audience the month belongs to.
+        tests:
+          - not_null
+
+      - name: month_start
+        description: First day of the month.
+        tests:
+          - not_null

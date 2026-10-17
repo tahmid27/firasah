@@ -23,3 +23,24 @@ sources:
           matching Mailchimp's nested JSON response shape. Append-only,
           not deduplicated at this layer on purpose.
         loaded_at_field: _ingested_at
+
+      - name: raw_mailchimp_campaign_link_clicks
+        description: >
+          Raw per-link click counts for each sent campaign (which links in
+          the email were clicked). Append-only: click counts keep growing
+          after a send, so every run lands the current figure again.
+        loaded_at_field: _ingested_at
+
+      - name: raw_mailchimp_list_activity_daily
+        description: >
+          Raw daily audience activity (subscribes, unsubscribes, emails
+          sent, opens, clicks, bounces). Mailchimp returns a rolling window
+          of recent days, so each run re-lands overlapping days. Append-only.
+        loaded_at_field: _ingested_at
+
+      - name: raw_mailchimp_list_growth_monthly
+        description: >
+          Raw monthly audience growth (subscribed, unsubscribed, cleaned,
+          imports, opt-ins ...). Append-only; the current month's figures
+          change between runs.
+        loaded_at_field: _ingested_at
