@@ -31,11 +31,7 @@
 -- would make every unseen donation look refunded. If full pulls ever get
 -- too expensive, the answer is windowed delete-detection, not incremental
 -- fetch bolted on.
--- Tenant scoping: the snapshot's key is (org_id, donation_id), not the
--- donation ID alone, so two charities that ever share a JustGiving donation
--- ID can't overwrite each other's history. dbt snapshots key on a single
--- column, hence the combined snapshot_key. "Latest complete pull" is per
--- charity and page for the same reason.
+-- Keyed per org: snapshots take a single key column, hence snapshot_key.
 select
     concat(org_id, '|', cast(donation_id as string)) as snapshot_key,
     org_id,

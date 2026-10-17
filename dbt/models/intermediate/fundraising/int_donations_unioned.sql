@@ -43,8 +43,6 @@ justgiving as (
     -- Refund-aware: only donations still present as of the last snapshot
     -- run. See justgiving_donations_snapshot for how that's detected.
     from {{ ref('justgiving_donations_snapshot') }} as d
-    -- Joined on org_id too: a page's details must come from the same
-    -- charity's pull, never another tenant's copy of the same page
     left join latest_justgiving_pages as p
         on d.org_id = p.org_id
         and d.page_short_name = p.page_short_name

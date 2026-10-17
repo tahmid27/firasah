@@ -1,22 +1,4 @@
-"""The only door from the API to BigQuery.
-
-Every query is built here, and every query gets `WHERE org_id = @org_id`
-with the value taken from the verified OrgContext — never from the
-endpoint or the request. A test (tests/test_api_security.py) fails if any
-other API module imports the BigQuery client or calls `.query(`, so no
-endpoint can run its own SQL.
-
-Two kinds of thing go into a query, handled differently:
-
-  * VALUES (the org, a date, an amount) are sent as query PARAMETERS:
-    BigQuery receives the SQL text and the values separately and never
-    mixes them, so a value can't change what the SQL does (no SQL
-    injection, whatever the value contains).
-  * NAMES (which mart, which columns) can't be parameters in BigQuery, so
-    they are checked against the explicit allowlist below and never taken
-    from user input as-is. The allowlist doubles as a privacy control: a
-    column has to be deliberately listed before the API can return it.
-"""
+"""The only path from the API to BigQuery; every query is scoped to the caller's org."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -31,9 +13,7 @@ from api.settings import Settings, get_settings
 from api.tenancy import OrgContext
 from core.org_ids import validate_org_id
 
-# Which columns of which marts the API may read. org_id is deliberately
-# absent: it is filtered on by the helper itself, never selected or filtered
-# by callers.
+# Columns the API may read, per mart. org_id is excluded: the helper filters on it.
 MARTS: dict[str, frozenset[str]] = {
     "fct_donations": frozenset(
         {
@@ -233,7 +213,7 @@ def get_executor(settings: Annotated[Settings, Depends(get_settings)]) -> QueryE
 
 
 def _param(name: str, value: Any) -> bigquery.ScalarQueryParameter:
-    # bool before int: in Python, True is also an int
+    # bool before int: True is also an int
     for python_type, bq_type in (
         (bool, "BOOL"),
         (int, "INT64"),
@@ -264,8 +244,7 @@ def build_query(
     order_by: Sequence[tuple[str, str]] = (),
     limit: int | None = None,
 ) -> tuple[str, list[bigquery.ScalarQueryParameter]]:
-    """Returns (sql, parameters). Pure — no BigQuery call — so it can be
-    tested directly."""
+    """Returns (sql, parameters) without running anything."""
     if mart not in MARTS:
         raise ValueError(f"unknown mart: {mart!r}")
     if not columns:
@@ -274,7 +253,6 @@ def build_query(
     select = ", ".join(_check_column(mart, c) for c in columns)
     table = f"`{settings.bigquery_project}.{settings.bigquery_dataset}.{mart}`"
 
-    # The tenant filter is always first and always present.
     where = ["org_id = @org_id"]
     params = [_param("org_id", validate_org_id(ctx.org_id))]
 

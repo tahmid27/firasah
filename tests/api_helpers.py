@@ -1,6 +1,4 @@
-"""Shared fixtures for API tests: test settings, a test signing key, a token
-factory (including deliberately malicious tokens), and a fake membership
-table. Nothing here talks to Supabase or BigQuery."""
+"""Shared API test fixtures: settings, signing keys, token factories, fake lookups."""
 
 import base64
 import hashlib
@@ -22,8 +20,6 @@ SETTINGS = Settings(
     bigquery_dataset="test_dataset",
 )
 
-# Supabase's real key would be fetched from its JWKS URL; tests make their
-# own, plus a second "attacker" key that Supabase never published.
 SIGNING_KEY = ec.generate_private_key(ec.SECP256R1())
 ATTACKER_KEY = ec.generate_private_key(ec.SECP256R1())
 PUBLIC_PEM = SIGNING_KEY.public_key().public_bytes(
@@ -41,8 +37,7 @@ MEMBERSHIPS = {
 
 
 class FakeSigningKeys:
-    """Always hands back the genuine public key — so a token signed with
-    anything else fails verification, exactly as with Supabase's JWKS."""
+    """Always returns the genuine public key."""
 
     def key_for(self, token):
         return SIGNING_KEY.public_key()
@@ -83,21 +78,19 @@ def _b64(data: bytes) -> str:
 
 
 def raw_token(header: dict, payload: dict, signature: bytes = b"") -> str:
-    """Hand-builds a JWT, for attacks a normal JWT library refuses to make."""
+    """Builds a JWT by hand (for tokens PyJWT won't create)."""
     head = _b64(json.dumps(header).encode())
     body = _b64(json.dumps(payload).encode())
     return f"{head}.{body}.{_b64(signature)}"
 
 
 def unsigned_token(user_id=USER_A) -> str:
-    """The `alg: none` attack: a token that claims it needs no signature."""
+    """`alg: none` token."""
     return raw_token({"alg": "none", "typ": "JWT"}, claims(user_id))
 
 
 def hs256_confusion_token(user_id=USER_A) -> str:
-    """The algorithm-confusion attack: an HS256 token whose HMAC "secret" is
-    the server's PUBLIC key (which anyone can download). A server that
-    trusted the token's own `alg` header would accept it."""
+    """HS256 token signed with the public key as the HMAC secret."""
     header = {"alg": "HS256", "typ": "JWT", "kid": "test"}
     head = _b64(json.dumps(header).encode())
     body = _b64(json.dumps(claims(user_id)).encode())

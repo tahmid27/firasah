@@ -1,14 +1,4 @@
-"""Which charity is the caller acting for? Resolved server-side, every time.
-
-Option A (decided 2026-10-17): the login token only proves WHO the caller
-is; their charity is looked up in Supabase's `memberships` table on each
-request. Removing someone from a charity therefore takes effect on their
-very next request — nothing stale lives in the token.
-
-The org_id NEVER comes from the request itself (URL, query string, body or
-headers): anything there can be typed by an attacker. Endpoints get it only
-from the OrgContext this module produces.
-"""
+"""Resolves the caller's organisation from Supabase memberships on each request."""
 
 from dataclasses import dataclass
 from typing import Annotated, Protocol
@@ -23,7 +13,7 @@ from core.org_ids import validate_org_id
 
 @dataclass(frozen=True)
 class OrgContext:
-    """The verified identity every tenant-scoped endpoint works from."""
+    """The verified identity tenant-scoped endpoints work from."""
 
     user_id: str
     org_id: str
@@ -36,14 +26,8 @@ class MembershipLookup(Protocol):
 
 
 class SupabaseMembershipLookup:
-    """Reads the caller's membership row through Supabase's REST API, *as
-    the caller*: it sends the user's own token, not the service-role key.
-
-    That means Supabase's RLS policy ("users read their own membership")
-    applies, so even if this code had a bug the database would still only
-    return the caller's own row. The API never needs the RLS-bypassing
-    service-role key for this — least privilege.
-    """
+    """Reads the caller's membership with their own token (not the service
+    role), so Supabase RLS applies."""
 
     def __init__(self, settings: Settings, client: httpx.Client | None = None):
         self._settings = settings
@@ -63,8 +47,7 @@ class SupabaseMembershipLookup:
         if not rows:
             return None
         if len(rows) > 1:
-            # Impossible while memberships.user_id is the primary key (one
-            # charity per user); refuse rather than guess if that changes.
+            # memberships.user_id is the primary key, so this shouldn't happen
             raise RuntimeError("user has more than one membership")
         return rows[0]["org_id"], rows[0]["role"]
 
@@ -94,8 +77,6 @@ def get_org_context(
         ) from None
 
     if membership is None:
-        # Logged in, but not a member of any charity: authenticated, yet
-        # not authorised to see any tenant's data.
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="no organisation for this user",
@@ -105,6 +86,5 @@ def get_org_context(
     return OrgContext(user_id=user.user_id, org_id=validate_org_id(org_id), role=role)
 
 
-# What endpoints declare: `def endpoint(ctx: CurrentOrg)`. The route-coverage
-# test checks every non-public route depends on get_org_context.
+# Endpoints declare `ctx: CurrentOrg`
 CurrentOrg = Annotated[OrgContext, Depends(get_org_context)]

@@ -1,5 +1,4 @@
-"""The BigQuery query helper: every query is forced onto the caller's charity,
-values travel only as parameters, and names come only from the allowlist."""
+"""The BigQuery query helper."""
 
 from datetime import date
 

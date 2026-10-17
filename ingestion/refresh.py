@@ -88,8 +88,7 @@ def firasah_refresh_flow(
     ig_user_id: str | None = None,
 ) -> None:
     # Defaults come from .env so no account identifiers live in source code.
-    # One tenant per run for now (FIRASAH_ORG_ID); looping over every
-    # charity's connections from Supabase is a later step.
+    # One tenant per run for now.
     org_id = org_id or os.environ["FIRASAH_ORG_ID"]
     event_ids = event_ids or os.environ["JUSTGIVING_EVENT_IDS"]
     ig_user_id = ig_user_id or os.environ["INSTAGRAM_USER_ID"]
