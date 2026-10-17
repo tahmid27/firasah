@@ -22,3 +22,11 @@ sources:
           the same post can appear multiple times across runs. Not
           deduplicated at this layer on purpose.
         loaded_at_field: _ingested_at
+
+      - name: raw_instagram_media_insights
+        description: >
+          Raw per-post insight metrics (reach, views, shares, saves, total
+          interactions) from the Graph API's separate insights endpoint.
+          Append-only, one row per post per run. Posts published before the
+          account became a business account have no insights and no row.
+        loaded_at_field: _ingested_at

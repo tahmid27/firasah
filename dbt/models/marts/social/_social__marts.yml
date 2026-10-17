@@ -5,9 +5,11 @@ models:
     description: >
       One row per post across every social platform (TikTok + Instagram),
       unioned in int_social_posts_unioned. This is the table a cross-platform
-      content-performance chart should query. view_count and share_count are
-      null for Instagram rows — not exposed by the basic media fields
-      currently pulled (would need the separate insights endpoint).
+      content-performance chart should query. Instagram rows get reach, shares
+      and saves from the insights endpoint; view_count is only filled for
+      Instagram videos (old image posts report 0 views meaning "not
+      measured"). TikTok has no reach or saves. Instagram posts from before
+      the account became a business account have no insights (nulls).
     columns:
       - name: post_id
         description: >
@@ -33,6 +35,15 @@ models:
         description: Like count as of the most recent pull.
         tests:
           - not_null
+
+      - name: reach
+        description: >
+          Unique accounts that saw the post. Instagram only (null for
+          TikTok). The one visibility metric comparable across Instagram
+          formats; null for posts predating the business account.
+
+      - name: save_count
+        description: Times the post was saved. Instagram only (null for TikTok).
 
       - name: media_product_type
         description: >

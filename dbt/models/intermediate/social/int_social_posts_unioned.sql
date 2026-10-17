@@ -13,6 +13,8 @@ with tiktok as (
         like_count,
         comment_count,
         share_count,
+        cast(null as int64) as save_count,
+        cast(null as int64) as reach,
         ingested_at
 
     from {{ ref('stg_tiktok_videos') }}
@@ -24,24 +26,35 @@ instagram as (
 
     select
         'instagram' as platform,
-        cast(media_id as string) as source_post_id,
-        posted_at,
-        caption,
-        media_type,
-        media_product_type,
-        permalink,
-        -- Instagram's basic media fields don't expose view counts the way
-        -- TikTok's video.list does — would need the separate insights
-        -- endpoint (instagram_manage_insights, already granted) for that,
-        -- not pulled in yet
-        cast(null as int64) as view_count,
-        like_count,
-        comments_count as comment_count,
-        cast(null as int64) as share_count,
-        ingested_at
+        cast(m.media_id as string) as source_post_id,
+        m.posted_at,
+        m.caption,
+        m.media_type,
+        m.media_product_type,
+        m.permalink,
+        -- Insights come from a separate endpoint, joined on the post.
+        -- Views are only meaningful for video/Reels: old image and
+        -- carousel posts report 0, meaning "not measured", so views are
+        -- nulled for them rather than showing a misleading zero. Reach is
+        -- the metric that works across every format.
+        if(m.media_type = 'VIDEO', i.view_count, null) as view_count,
+        m.like_count,
+        m.comments_count as comment_count,
+        i.share_count,
+        i.save_count,
+        i.reach,
+        m.ingested_at
 
-    from {{ ref('stg_instagram_media') }}
-    qualify row_number() over (partition by media_id order by ingested_at desc) = 1
+    from {{ ref('stg_instagram_media') }} as m
+    -- Left join: posts from before the account became a business account
+    -- have no insights, and must still appear
+    left join (
+        select *
+        from {{ ref('stg_instagram_media_insights') }}
+        qualify row_number() over (partition by media_id order by ingested_at desc) = 1
+    ) as i
+        on m.media_id = i.media_id
+    qualify row_number() over (partition by m.media_id order by m.ingested_at desc) = 1
 
 ),
 
@@ -67,6 +80,8 @@ select
     like_count,
     comment_count,
     share_count,
+    save_count,
+    reach,
     ingested_at
 
 from unioned
