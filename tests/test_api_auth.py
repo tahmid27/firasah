@@ -1,6 +1,4 @@
-"""Auth and tenant resolution: a request only gets through with a genuine,
-unexpired Supabase token, and the charity always comes from the server-side
-membership lookup — never from anything the caller sends."""
+"""Token verification and organisation resolution."""
 
 import httpx
 import pytest
@@ -88,12 +86,10 @@ def test_bad_tokens_are_refused(client, lookup, description, headers):
 
     assert response.status_code == 401, description
     assert response.headers.get("www-authenticate") == "Bearer"
-    # Refused before any membership lookup happens
     assert lookup.calls == []
 
 
 def test_refusals_never_explain_why(client):
-    # Telling a caller why their token failed only helps someone forging one
     expired = client.get("/me", headers=bearer(token(exp=1_000_000_000)))
     forged = client.get("/me", headers=bearer(token(key=ATTACKER_KEY)))
 
@@ -123,7 +119,6 @@ def test_membership_service_down_is_a_503_not_a_leak(client):
 
 
 def test_org_id_in_the_request_is_ignored(client):
-    # Every place a caller could try to smuggle another charity's ID in
     response = client.request(
         "GET",
         "/me",
@@ -137,8 +132,6 @@ def test_org_id_in_the_request_is_ignored(client):
 
 
 def test_org_id_claims_inside_the_token_are_ignored(client):
-    # Option A: the token proves WHO, the server decides WHICH charity —
-    # even a validly signed token can't nominate its own org
     response = client.get(
         "/me",
         headers=bearer(
@@ -170,7 +163,6 @@ def test_supabase_lookup_asks_as_the_user_not_as_the_service_role():
 
     assert result == ("charity_a", "admin")
     request = seen[0]
-    # The user's own token, so Supabase RLS limits the answer to their row
     assert request.headers["authorization"] == "Bearer users-own-jwt"
     assert request.headers["apikey"] == SETTINGS.supabase_anon_key
     assert request.url.params["user_id"] == f"eq.{USER_A}"

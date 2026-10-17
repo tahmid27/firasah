@@ -1,5 +1,4 @@
-"""Tenant isolation at the ingestion layer: every raw row must carry a valid
-org_id, and nothing can overwrite it."""
+"""org_id validation and tagging at ingestion."""
 
 import ast
 from pathlib import Path
@@ -41,8 +40,6 @@ def test_tag_rows_stamps_org_and_ingested_at():
 
 
 def test_tag_rows_cannot_be_overwritten_by_source_data_or_tags():
-    # A source record or a caller tag that happens to use the same name must
-    # never be able to reassign a row to another tenant.
     rows = tag_rows(
         [{"_org_id": "other_charity"}],
         "test_charity",
@@ -60,9 +57,7 @@ def test_tag_rows_refuses_a_missing_org():
 
 
 def test_every_raw_load_in_the_codebase_passes_org_id():
-    """Static guard: fails CI if any call to load_raw_to_bigquery anywhere in
-    ingestion/ forgets the org_id argument. (It's also a required argument,
-    so a forgotten one would fail at run time — this catches it before.)"""
+    """Every load_raw_to_bigquery call in ingestion/ passes org_id."""
     missing = []
     for path in Path("ingestion").glob("*.py"):
         tree = ast.parse(path.read_text())

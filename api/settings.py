@@ -1,8 +1,4 @@
-"""Configuration the API reads from the environment (.env locally).
-
-Exposed as a FastAPI dependency (`get_settings`) so tests can swap in their
-own values without touching the real environment.
-"""
+"""API configuration from the environment."""
 
 import os
 import re
@@ -11,8 +7,7 @@ from functools import lru_cache
 
 from dotenv import load_dotenv
 
-# BigQuery project/dataset names end up inside SQL as identifiers (they can't
-# be query parameters), so they are checked against a strict pattern first.
+# Interpolated into SQL as identifiers, so restricted
 _IDENTIFIER = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
@@ -30,12 +25,10 @@ class Settings:
 
     @property
     def jwt_issuer(self) -> str:
-        """Who signs Firasah's login tokens: this Supabase project's auth."""
         return f"{self.supabase_url}/auth/v1"
 
     @property
     def jwks_url(self) -> str:
-        """Where Supabase publishes the public keys that verify its tokens."""
         return f"{self.jwt_issuer}/.well-known/jwks.json"
 
 

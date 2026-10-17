@@ -121,10 +121,8 @@ def save_raw_json(data: list[dict], path: str | Path) -> None:
 
 
 def tag_rows(rows: list[dict], org_id: str, tags: dict, ingested_at: str) -> list[dict]:
-    """Stamps each row with its tenant, when it arrived, and any
-    source-specific identifiers. The system tags (_org_id, _ingested_at) are
-    applied last, so a source field or caller tag can never overwrite them.
-    """
+    """Adds source tags, then _org_id and _ingested_at (last, so neither can
+    be overwritten)."""
     org_id = validate_org_id(org_id)
     return [
         {**row, **tags, "_org_id": org_id, "_ingested_at": ingested_at} for row in rows
@@ -136,7 +134,7 @@ def load_raw_to_bigquery(
     rows: list[dict], table_id: str, tags: dict, *, org_id: str
 ) -> None:
     """Appends rows to a raw landing table, tagging each with the tenant
-    (`_org_id`, required — see validate_org_id), _ingested_at, plus whatever
+    (`_org_id`, required), _ingested_at, plus whatever
     source-specific identifiers the caller passes in `tags` (e.g. which
     fundraising page or account they came from). Schema is
     auto-detected from the JSON — the raw layer keeps field names/types
@@ -147,8 +145,7 @@ def load_raw_to_bigquery(
     separate from the source-specific rate-limit/backoff handling in
     get_with_retries, which deals with a different kind of failure.
     """
-    # Checked before anything else, so even an empty load with a bad org_id
-    # fails loudly rather than slipping through
+    # Before the empty-rows early return, so a bad org_id always fails
     validate_org_id(org_id)
 
     if not rows:

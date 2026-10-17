@@ -1,10 +1,4 @@
-"""Tenant isolation at the dbt layer, checked statically from dbt's parsed
-project (its "manifest") — no BigQuery connection needed, so it runs in CI.
-
-Fails the build if a staging model or mart is added without an org_id column
-and a not_null test on it, or if a mart checks uniqueness globally (`unique`)
-instead of per tenant (`unique_per_org`).
-"""
+"""Static checks on the parsed dbt project: org_id coverage and per-org uniqueness."""
 
 import json
 
@@ -46,7 +40,7 @@ def _models(manifest):
 
 
 def _tests_on(manifest, model_uid):
-    """(test name, column) for every generic test attached to a model."""
+    """(test name, column) for each generic test on a model."""
     found = set()
     for node in manifest["nodes"].values():
         if node["resource_type"] != "test" or not node.get("test_metadata"):
@@ -60,8 +54,6 @@ def _tests_on(manifest, model_uid):
 
 
 def test_tenant_layers_were_found(manifest):
-    # Guards the guard: if paths change and nothing matches, the tests below
-    # would pass vacuously.
     assert len(_models(manifest)) >= 20
 
 

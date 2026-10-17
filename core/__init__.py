@@ -1,1 +1,1 @@
-"""Code shared by the ingestion pipeline and the API."""
+"""Code shared by ingestion and the API."""
