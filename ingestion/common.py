@@ -97,6 +97,10 @@ def load_raw_to_bigquery(rows: list[dict], table_id: str, tags: dict) -> None:
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
         write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
         autodetect=True,
+        # The raw layer mirrors whatever the source sends, so a source
+        # adding a field (or us requesting extra metrics) must extend the
+        # existing table rather than fail the load on a schema mismatch.
+        schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION],
     )
     job = client.load_table_from_json(tagged_rows, table_id, job_config=job_config)
     job.result()  # wait for the load job to finish, raises on failure

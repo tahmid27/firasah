@@ -15,6 +15,11 @@ with tiktok as (
         share_count,
         cast(null as int64) as save_count,
         cast(null as int64) as reach,
+        cast(null as int64) as repost_count,
+        cast(null as int64) as profile_visits,
+        cast(null as int64) as new_follower_count,
+        cast(null as float64) as avg_watch_time_seconds,
+        cast(null as float64) as skip_rate,
         ingested_at
 
     from {{ ref('stg_tiktok_videos') }}
@@ -43,6 +48,12 @@ instagram as (
         i.share_count,
         i.save_count,
         i.reach,
+        i.repost_count,
+        i.profile_visits,
+        i.new_follower_count,
+        -- Reels only; null for feed posts
+        i.avg_watch_time_seconds,
+        i.skip_rate,
         m.ingested_at
 
     from {{ ref('stg_instagram_media') }} as m
@@ -82,6 +93,11 @@ select
     share_count,
     save_count,
     reach,
+    repost_count,
+    profile_visits,
+    new_follower_count,
+    avg_watch_time_seconds,
+    skip_rate,
     ingested_at
 
 from unioned

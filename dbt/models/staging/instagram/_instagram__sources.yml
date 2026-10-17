@@ -30,3 +30,19 @@ sources:
           Append-only, one row per post per run. Posts published before the
           account became a business account have no insights and no row.
         loaded_at_field: _ingested_at
+
+      - name: raw_instagram_account_insights_daily
+        description: >
+          Raw account-level daily totals (reach, views, engagement, saves,
+          link taps, ...). One row per day per pull; each run re-pulls the
+          most recent days (Instagram data lags up to 48 hours), so the same
+          day appears multiple times. Append-only.
+        loaded_at_field: _ingested_at
+
+      - name: raw_instagram_follower_demographics
+        description: >
+          Raw follower demographics: one row per breakdown bucket (age band,
+          gender, country, city) per pull. A snapshot per run, so the
+          history shows how the audience shifts. Instagram returns at most
+          the top 45 buckets per breakdown and needs 100+ followers.
+        loaded_at_field: _ingested_at

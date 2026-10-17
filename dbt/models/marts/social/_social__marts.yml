@@ -45,6 +45,28 @@ models:
       - name: save_count
         description: Times the post was saved. Instagram only (null for TikTok).
 
+      - name: repost_count
+        description: Times the post was reposted. Instagram only.
+
+      - name: profile_visits
+        description: >
+          Profile visits that came from this post. Instagram feed posts only
+          (null for Reels and TikTok).
+
+      - name: new_follower_count
+        description: >
+          Accounts that followed from this post. Instagram feed posts only
+          (null for Reels and TikTok).
+
+      - name: avg_watch_time_seconds
+        description: Average time spent watching, in seconds. Instagram Reels only.
+
+      - name: skip_rate
+        description: >
+          Percentage of initial viewers who skipped within the first 3
+          seconds, as Instagram returns it (e.g. 4.4 = 4.4%). Instagram
+          Reels only.
+
       - name: media_product_type
         description: >
           Instagram's surface the post was published to ("FEED" or "REELS") —
@@ -75,5 +97,45 @@ models:
 
       - name: follower_count
         description: Follower count as of this ingestion run.
+        tests:
+          - not_null
+
+  - name: fct_social_account_daily
+    description: >
+      One row per account per day: daily reach, views, engagement and link
+      taps. Latest pull per day. Instagram only for now; TikTok's current
+      access doesn't expose daily account activity.
+    columns:
+      - name: account_id
+        description: Cross-platform account identifier, matching fct_social_account_stats.account_id.
+        tests:
+          - not_null
+
+      - name: insight_date
+        description: The day (UTC) the figures cover.
+        tests:
+          - not_null
+
+      - name: reach
+        description: Unique accounts that saw any of the account's content that day.
+
+  - name: fct_social_follower_demographics
+    description: >
+      Follower demographic buckets (age, gender, country, city) per
+      ingestion run. Not deduplicated — each run is a snapshot; take the
+      latest ingested_at for the current audience.
+    columns:
+      - name: account_id
+        description: Cross-platform account identifier.
+        tests:
+          - not_null
+
+      - name: breakdown_type
+        description: Which split the row belongs to ("age", "gender", "country" or "city").
+        tests:
+          - not_null
+
+      - name: follower_count
+        description: Followers in that bucket.
         tests:
           - not_null
