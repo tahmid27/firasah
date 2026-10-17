@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: instagram
     description: Raw Instagram data landed by the Python ingestion script (ingestion/instagram_posts.py) via the Instagram Graph API (Facebook Login setup, for a Page-linked Instagram Business Account). Not loaded through dbt.
-    database: firasah-dev
+    database: firasah-dev-511916
     schema: firasah_dev
     tables:
       - name: raw_instagram_account_info

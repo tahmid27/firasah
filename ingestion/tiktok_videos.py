@@ -38,8 +38,8 @@ VIDEO_FIELDS = (
 )
 USER_FIELDS = "open_id,display_name,follower_count,following_count,likes_count,video_count"
 
-RAW_VIDEOS_TABLE_ID = "firasah-dev.firasah_dev.raw_tiktok_videos"
-RAW_USER_INFO_TABLE_ID = "firasah-dev.firasah_dev.raw_tiktok_user_info"
+RAW_VIDEOS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_tiktok_videos"
+RAW_USER_INFO_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_tiktok_user_info"
 
 
 @task

@@ -16,11 +16,14 @@ import re
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
 from prefect import flow, task
 
 from ingestion.common import load_raw_to_bigquery, save_raw_json
 
-RAW_TABLE_ID = "firasah-dev.firasah_dev.raw_launchgood_donations"
+load_dotenv()
+
+RAW_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_launchgood_donations"
 
 
 def _sanitize_column_name(header: str) -> str:
