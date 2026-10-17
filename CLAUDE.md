@@ -50,6 +50,7 @@ Operational specifics worth knowing before running anything — these are easy t
 - **Naming:** kebab-case for files, branches, and the repo itself.
 - **Gitignore:** Python + Node coverage — `.env`, `__pycache__`, `node_modules`, `.idea`, `.vscode`, `credentials/` — already in place; keep it current as new tooling gets added.
 - **Scope discipline:** work top-down through the roadmap below. Don't pull work forward from a later phase unless explicitly asked — even if it seems related or easy.
+- **Synthetic data starts at the raw layer, not the marts (decided 2026-10-17).** When building a larger fake dataset to test the dashboard, generate it as *raw-shaped* files/rows for each source (the same shape the real API/CSV produces) and let it flow through ingestion → staging → snapshot → intermediate → marts. Faking `fct_` tables directly would skip every model and test, so it would prove nothing about the pipeline; passing synthetic raw data through the real models doubles as a test of them.
 
 ## Learning & explanation preferences
 
@@ -248,6 +249,13 @@ Layer autonomous agents on top of Firasah — drafting and emailing weekly repor
 - [ ] Add guardrails and human-in-the-loop review
 
 ## Not doing yet / explicitly deferred
+
+- **Parked audit follow-ups (from `docs/firasah-audit-report.pdf`, reviewed 2026-10-17) — come back to these:**
+  - **Minimal CI + first tests (audit step 3).** One GitHub Actions workflow running `ruff`, a few `pytest` tests, and `dbt build`/parse. First pytest targets are pure functions needing no mocking: `update_env_file` and `request_with_retries` (with a fake httpx transport). Roughly half a day; a strong signal for analytics engineer roles. There is no `tests/` or `.github/` yet.
+  - **Mom Test conversations** (plan in `docs/firasah-mom-test-plan.pdf`, gitignored). Audit recommends 5-8 calls with a deadline, before the dashboard views are designed. Not yet added as a roadmap item.
+  - **Smaller code fixes:** `Retry-After` parsing in `ingestion/common.py` assumes a number but HTTP allows a date string; drop the auth-code echo in the TikTok callback in `main.py` before it does a real token exchange; decide a currency-conversion approach (which date's rate) before non-GBP donations are unified.
+  - **Donor names kept on purpose (decided 2026-10-17):** the audit suggested hashing/dropping `donor_name` and donor messages before the marts for UK GDPR reasons. Decision: keep them for now, but handle a null/missing donor name deliberately (anonymous donations) rather than letting the not-null test fail on real data.
+  - **Git history still contains the personal identifiers scrubbed from files on 2026-10-17** — rewrite or restart history before the repo goes public.
 
 - Stripe integration — not until MVP phase
 - Agentic AI layer — final phase, not before the rest is solid
