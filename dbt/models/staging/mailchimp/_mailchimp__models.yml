@@ -9,6 +9,11 @@ models:
       rename/cast layer only — not deduplicated, same reasoning as every
       other staging model in this project.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: campaign_id
         description: Unique identifier for the campaign, as provided by Mailchimp.
         tests:
@@ -41,6 +46,11 @@ models:
       API (via raw_mailchimp_audience_stats), with Mailchimp's nested
       stats object flattened into plain columns.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: list_id
         description: Unique identifier for the audience/list, as provided by Mailchimp.
         tests:
@@ -58,6 +68,11 @@ models:
       deduplicated — counts grow after a send, so fct_mailchimp_link_clicks
       keeps the latest pull per link.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: campaign_id
         description: Campaign the link was in; matches stg_mailchimp_campaign_reports.campaign_id.
         tests:
@@ -78,6 +93,11 @@ models:
       Daily audience activity (via raw_mailchimp_list_activity_daily). Not
       deduplicated — each run re-lands the recent window.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: list_id
         description: Audience the activity belongs to.
         tests:
@@ -99,6 +119,11 @@ models:
       Monthly audience growth (via raw_mailchimp_list_growth_monthly). Not
       deduplicated — the current month's figures change between runs.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: list_id
         description: Audience the figures belong to.
         tests:

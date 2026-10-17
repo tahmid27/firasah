@@ -255,7 +255,9 @@ def fetch_follower_demographics(ig_user_id: str) -> list[dict]:
 
 
 @flow(name="instagram-posts-ingestion")
-def instagram_posts_flow(ig_user_id: str, account_insights_days: int = 7) -> None:
+def instagram_posts_flow(
+    org_id: str, ig_user_id: str, account_insights_days: int = 7
+) -> None:
     account_info = fetch_account_info(ig_user_id)
     print(
         f"Account info: @{account_info.get('username')} — "
@@ -263,24 +265,35 @@ def instagram_posts_flow(ig_user_id: str, account_insights_days: int = 7) -> Non
     )
     save_raw_json([account_info], "data/raw/instagram_account_info.json")
     load_raw_to_bigquery(
-        [account_info], RAW_ACCOUNT_INFO_TABLE_ID, tags={"_ig_user_id": ig_user_id}
+        [account_info],
+        RAW_ACCOUNT_INFO_TABLE_ID,
+        tags={"_ig_user_id": ig_user_id},
+        org_id=org_id,
     )
 
     media = fetch_media(ig_user_id)
     print(f"Total media fetched: {len(media)}")
     save_raw_json(media, "data/raw/instagram_media.json")
-    load_raw_to_bigquery(media, RAW_MEDIA_TABLE_ID, tags={"_ig_user_id": ig_user_id})
+    load_raw_to_bigquery(
+        media, RAW_MEDIA_TABLE_ID, tags={"_ig_user_id": ig_user_id}, org_id=org_id
+    )
 
     insights = fetch_media_insights(media)
     save_raw_json(insights, "data/raw/instagram_media_insights.json")
     load_raw_to_bigquery(
-        insights, RAW_MEDIA_INSIGHTS_TABLE_ID, tags={"_ig_user_id": ig_user_id}
+        insights,
+        RAW_MEDIA_INSIGHTS_TABLE_ID,
+        tags={"_ig_user_id": ig_user_id},
+        org_id=org_id,
     )
 
     daily = fetch_account_insights_daily(ig_user_id, account_insights_days)
     save_raw_json(daily, "data/raw/instagram_account_insights_daily.json")
     load_raw_to_bigquery(
-        daily, RAW_ACCOUNT_INSIGHTS_TABLE_ID, tags={"_ig_user_id": ig_user_id}
+        daily,
+        RAW_ACCOUNT_INSIGHTS_TABLE_ID,
+        tags={"_ig_user_id": ig_user_id},
+        org_id=org_id,
     )
 
     demographics = fetch_follower_demographics(ig_user_id)
@@ -289,6 +302,7 @@ def instagram_posts_flow(ig_user_id: str, account_insights_days: int = 7) -> Non
         demographics,
         RAW_FOLLOWER_DEMOGRAPHICS_TABLE_ID,
         tags={"_ig_user_id": ig_user_id},
+        org_id=org_id,
     )
 
 
@@ -298,4 +312,4 @@ if __name__ == "__main__":
     # (default 7; use e.g. 60 once to backfill history).
     ig_user_id = sys.argv[1] if len(sys.argv) > 1 else os.environ["INSTAGRAM_USER_ID"]
     days = int(sys.argv[2]) if len(sys.argv) > 2 else 7
-    instagram_posts_flow(ig_user_id, days)
+    instagram_posts_flow(os.environ["FIRASAH_ORG_ID"], ig_user_id, days)

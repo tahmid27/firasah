@@ -83,21 +83,29 @@ def run_dbt(command: str) -> None:
 
 @flow(name="firasah-refresh")
 def firasah_refresh_flow(
+    org_id: str | None = None,
     event_ids: str | None = None,
     ig_user_id: str | None = None,
 ) -> None:
-    # Defaults come from .env so no account identifiers live in source code
+    # Defaults come from .env so no account identifiers live in source code.
+    # One tenant per run for now (FIRASAH_ORG_ID); looping over every
+    # charity's connections from Supabase is a later step.
+    org_id = org_id or os.environ["FIRASAH_ORG_ID"]
     event_ids = event_ids or os.environ["JUSTGIVING_EVENT_IDS"]
     ig_user_id = ig_user_id or os.environ["INSTAGRAM_USER_ID"]
     failures: list[str] = []
 
-    _run_source("justgiving", justgiving_donations_flow, failures, event_ids)
-    _run_source("tiktok", tiktok_videos_flow, failures)
-    _run_source("instagram", instagram_posts_flow, failures, ig_user_id)
-    _run_source("mailchimp", mailchimp_campaigns_flow, failures)
+    _run_source("justgiving", justgiving_donations_flow, failures, org_id, event_ids)
+    _run_source("tiktok", tiktok_videos_flow, failures, org_id)
+    _run_source("instagram", instagram_posts_flow, failures, org_id, ig_user_id)
+    _run_source("mailchimp", mailchimp_campaigns_flow, failures, org_id)
 
     if _launchgood_has_new_export() and _run_source(
-        "launchgood", launchgood_donations_flow, failures, LAUNCHGOOD_EXPORT_PATH
+        "launchgood",
+        launchgood_donations_flow,
+        failures,
+        org_id,
+        LAUNCHGOOD_EXPORT_PATH,
     ):
         _mark_launchgood_loaded()
 

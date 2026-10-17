@@ -179,16 +179,16 @@ def fetch_list_growth(list_ids: list[str]) -> list[dict]:
 
 
 @flow(name="mailchimp-campaigns-ingestion")
-def mailchimp_campaigns_flow() -> None:
+def mailchimp_campaigns_flow(org_id: str) -> None:
     reports = fetch_campaign_reports()
     print(f"Total campaign reports fetched: {len(reports)}")
     save_raw_json(reports, "data/raw/mailchimp_campaign_reports.json")
-    load_raw_to_bigquery(reports, RAW_CAMPAIGN_REPORTS_TABLE_ID, tags={})
+    load_raw_to_bigquery(reports, RAW_CAMPAIGN_REPORTS_TABLE_ID, tags={}, org_id=org_id)
 
     audiences = fetch_audience_stats()
     print(f"Total audiences fetched: {len(audiences)}")
     save_raw_json(audiences, "data/raw/mailchimp_audience_stats.json")
-    load_raw_to_bigquery(audiences, RAW_AUDIENCE_STATS_TABLE_ID, tags={})
+    load_raw_to_bigquery(audiences, RAW_AUDIENCE_STATS_TABLE_ID, tags={}, org_id=org_id)
 
     campaign_ids = [r["id"] for r in reports]
     list_ids = [a["id"] for a in audiences]
@@ -196,18 +196,18 @@ def mailchimp_campaigns_flow() -> None:
     link_clicks = fetch_link_clicks(campaign_ids)
     print(f"Total link-click rows fetched: {len(link_clicks)}")
     save_raw_json(link_clicks, "data/raw/mailchimp_campaign_link_clicks.json")
-    load_raw_to_bigquery(link_clicks, RAW_LINK_CLICKS_TABLE_ID, tags={})
+    load_raw_to_bigquery(link_clicks, RAW_LINK_CLICKS_TABLE_ID, tags={}, org_id=org_id)
 
     activity = fetch_list_activity(list_ids)
     print(f"Total daily audience-activity rows fetched: {len(activity)}")
     save_raw_json(activity, "data/raw/mailchimp_list_activity_daily.json")
-    load_raw_to_bigquery(activity, RAW_LIST_ACTIVITY_TABLE_ID, tags={})
+    load_raw_to_bigquery(activity, RAW_LIST_ACTIVITY_TABLE_ID, tags={}, org_id=org_id)
 
     growth = fetch_list_growth(list_ids)
     print(f"Total monthly growth rows fetched: {len(growth)}")
     save_raw_json(growth, "data/raw/mailchimp_list_growth_monthly.json")
-    load_raw_to_bigquery(growth, RAW_LIST_GROWTH_TABLE_ID, tags={})
+    load_raw_to_bigquery(growth, RAW_LIST_GROWTH_TABLE_ID, tags={}, org_id=org_id)
 
 
 if __name__ == "__main__":
-    mailchimp_campaigns_flow()
+    mailchimp_campaigns_flow(os.environ["FIRASAH_ORG_ID"])

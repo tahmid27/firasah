@@ -11,12 +11,17 @@ models:
       LaunchGood donations are all treated as currently-active, since there's
       no reliable way yet to detect one disappearing between CSV exports.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: donation_id
         description: >
           Cross-platform unique identifier (source platform + the
           platform's own donation ID, e.g. "justgiving-12345").
         tests:
-          - unique
+          - unique_per_org
           - not_null
 
       - name: source

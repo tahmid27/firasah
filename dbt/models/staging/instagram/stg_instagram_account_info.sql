@@ -7,6 +7,7 @@ with raw as (
 renamed as (
 
     select
+        _org_id as org_id,
         id as account_id,
         username,
         name,

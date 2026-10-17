@@ -7,6 +7,7 @@ with raw as (
 renamed as (
 
     select
+        _org_id as org_id,
         _page_short_name as page_short_name,
         pageGuid as page_guid,
         title as page_title,

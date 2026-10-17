@@ -4,4 +4,4 @@
 -- earlier one's, same reasoning as fct_social_posts.
 select *
 from {{ ref('stg_mailchimp_campaign_reports') }}
-qualify row_number() over (partition by campaign_id order by ingested_at desc) = 1
+qualify row_number() over (partition by org_id, campaign_id order by ingested_at desc) = 1

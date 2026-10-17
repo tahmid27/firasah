@@ -7,6 +7,7 @@ with raw as (
 renamed as (
 
     select
+        _org_id as org_id,
         list_id,
         -- Mailchimp sends the month as text like "2026-09"
         parse_date('%Y-%m-%d', concat(month, '-01')) as month_start,

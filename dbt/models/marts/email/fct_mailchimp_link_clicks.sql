@@ -4,6 +4,7 @@
 -- one (same reasoning as fct_mailchimp_campaigns).
 select
     concat(campaign_id, '-', link_id) as link_click_id,
+    org_id,
     campaign_id,
     link_id,
     url,
@@ -15,4 +16,4 @@ select
     ingested_at
 
 from {{ ref('stg_mailchimp_campaign_link_clicks') }}
-qualify row_number() over (partition by campaign_id, link_id order by ingested_at desc) = 1
+qualify row_number() over (partition by org_id, campaign_id, link_id order by ingested_at desc) = 1

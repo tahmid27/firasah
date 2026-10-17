@@ -7,6 +7,7 @@ with raw as (
 renamed as (
 
     select
+        _org_id as org_id,
         safe_cast(donation_id as int64) as donation_id,
         safe_cast(created_date_utc as timestamp) as donation_date,
         created_time_utc as donation_time,

@@ -7,6 +7,7 @@ with raw as (
 renamed as (
 
     select
+        _org_id as org_id,
         list_id,
         cast(day as date) as activity_date,
         subs as new_subscribers,

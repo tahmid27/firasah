@@ -3,7 +3,7 @@
 {{
     config(
         target_schema='firasah_dev',
-        unique_key='donation_id',
+        unique_key='snapshot_key',
         strategy='check',
         check_cols=['amount', 'currency_code', 'traffic_source'],
         invalidate_hard_deletes=True,
@@ -31,7 +31,14 @@
 -- would make every unseen donation look refunded. If full pulls ever get
 -- too expensive, the answer is windowed delete-detection, not incremental
 -- fetch bolted on.
+-- Tenant scoping: the snapshot's key is (org_id, donation_id), not the
+-- donation ID alone, so two charities that ever share a JustGiving donation
+-- ID can't overwrite each other's history. dbt snapshots key on a single
+-- column, hence the combined snapshot_key. "Latest complete pull" is per
+-- charity and page for the same reason.
 select
+    concat(org_id, '|', cast(donation_id as string)) as snapshot_key,
+    org_id,
     donation_id,
     donor_name,
     amount,
@@ -41,6 +48,8 @@ select
     traffic_source,
     page_short_name
 from {{ ref('stg_justgiving_donations') }}
-qualify dense_rank() over (partition by page_short_name order by ingested_at desc) = 1
+qualify dense_rank() over (
+    partition by org_id, page_short_name order by ingested_at desc
+) = 1
 
 {% endsnapshot %}

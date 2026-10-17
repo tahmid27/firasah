@@ -8,6 +8,11 @@ models:
       layer decides "current" vs. "historical" account stats, same
       pattern as stg_tiktok_user_info.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: account_id
         description: Instagram Business Account ID, as provided by the Graph API.
         tests:
@@ -25,6 +30,11 @@ models:
       deduplicated, same reasoning as every other staging model in this
       project.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: media_id
         description: Unique identifier for the media item, as provided by the Graph API.
         tests:
@@ -52,6 +62,11 @@ models:
       latest row per post. Posts from before the account became a business
       account have no row here.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: media_id
         description: Media item these metrics belong to; matches stg_instagram_media.media_id.
         tests:
@@ -75,6 +90,11 @@ models:
       more than once. fct_social_account_daily keeps the latest pull per
       day.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: account_id
         description: Instagram Business Account ID.
         tests:
@@ -94,6 +114,11 @@ models:
       raw_instagram_follower_demographics). Not deduplicated — one set of
       rows per ingestion run is the point.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: breakdown_type
         description: Which split this row belongs to ("age", "gender", "country" or "city").
         tests:

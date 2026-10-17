@@ -7,6 +7,11 @@ models:
       raw_tiktok_videos). Thin rename/cast layer only — not deduplicated,
       same reasoning as every other staging model in this project.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: video_id
         description: Unique identifier for the video, as provided by TikTok.
         tests:
@@ -29,6 +34,11 @@ models:
       follower_count caveat in CLAUDE.md (the API's figure can legitimately
       differ from what the TikTok app itself displays).
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: account_id
         description: TikTok's open_id for the connected account.
         tests:

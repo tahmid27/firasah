@@ -7,6 +7,7 @@ with raw as (
 renamed as (
 
     select
+        _org_id as org_id,
         id as list_id,
         name as list_name,
         date_created,

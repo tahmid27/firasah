@@ -4,13 +4,14 @@ with latest_justgiving_pages as (
     -- running totals change), so take the latest row per page
     select *
     from {{ ref('stg_justgiving_pages') }}
-    qualify row_number() over (partition by page_short_name order by ingested_at desc) = 1
+    qualify row_number() over (partition by org_id, page_short_name order by ingested_at desc) = 1
 
 ),
 
 justgiving as (
 
     select
+        d.org_id,
         'justgiving' as source,
         cast(d.donation_id as string) as source_donation_id,
         d.donation_date,
@@ -42,8 +43,11 @@ justgiving as (
     -- Refund-aware: only donations still present as of the last snapshot
     -- run. See justgiving_donations_snapshot for how that's detected.
     from {{ ref('justgiving_donations_snapshot') }} as d
+    -- Joined on org_id too: a page's details must come from the same
+    -- charity's pull, never another tenant's copy of the same page
     left join latest_justgiving_pages as p
-        on d.page_short_name = p.page_short_name
+        on d.org_id = p.org_id
+        and d.page_short_name = p.page_short_name
     where d.dbt_valid_to is null
 
 ),
@@ -51,6 +55,7 @@ justgiving as (
 launchgood as (
 
     select
+        org_id,
         'launchgood' as source,
         cast(donation_id as string) as source_donation_id,
         donation_date,
@@ -94,7 +99,7 @@ launchgood as (
     -- export would otherwise produce duplicate rows here and break the
     -- unique test on fct_donations.donation_id.
     from {{ ref('stg_launchgood_donations') }}
-    qualify row_number() over (partition by donation_id order by ingested_at desc) = 1
+    qualify row_number() over (partition by org_id, donation_id order by ingested_at desc) = 1
 
 ),
 
@@ -111,6 +116,7 @@ select
     -- and LaunchGood both hand out their own small integer IDs
     -- independently), so the two are combined into one cross-platform key
     concat(source, '-', source_donation_id) as donation_id,
+    org_id,
     source,
     donation_date,
     amount,

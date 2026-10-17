@@ -11,6 +11,11 @@ models:
       "what's the current state of this donation" logic belongs in the mart
       layer, not here.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: donation_id
         description: Unique identifier for the donation, as provided by JustGiving.
         tests:
@@ -54,6 +59,11 @@ models:
       totals change between pulls. int_donations_unioned takes the latest
       row per page.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: page_short_name
         description: URL slug of the fundraising page; matches stg_justgiving_donations.page_short_name.
         tests:

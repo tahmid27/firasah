@@ -4,6 +4,7 @@
 -- one. This is the table for a daily subscribe/unsubscribe chart.
 select
     concat(list_id, '-', cast(activity_date as string)) as audience_day_id,
+    org_id,
     list_id,
     activity_date,
     new_subscribers,
@@ -19,4 +20,4 @@ select
     ingested_at
 
 from {{ ref('stg_mailchimp_list_activity_daily') }}
-qualify row_number() over (partition by list_id, activity_date order by ingested_at desc) = 1
+qualify row_number() over (partition by org_id, list_id, activity_date order by ingested_at desc) = 1
