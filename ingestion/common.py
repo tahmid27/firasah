@@ -9,7 +9,6 @@ about it.
 """
 
 import json
-import re
 import time
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -18,6 +17,8 @@ from pathlib import Path
 import httpx
 from google.cloud import bigquery
 from prefect import task
+
+from core.org_ids import ORG_ID_PATTERN, validate_org_id  # noqa: F401 (re-exported)
 
 MAX_RETRIES = 5
 
@@ -117,20 +118,6 @@ def save_raw_json(data: list[dict], path: str | Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2))
     print(f"Saved to {path}")
-
-
-# Lowercase letters, digits, "_" and "-"; covers readable dev IDs like
-# "test_charity" and generated UUIDs alike.
-ORG_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{1,63}$")
-
-
-def validate_org_id(org_id: str | None) -> str:
-    """Returns org_id if it is a well-formed tenant ID, otherwise raises.
-    Every raw row must say which charity it belongs to, so a missing or
-    malformed org_id is a hard error — never a default."""
-    if not isinstance(org_id, str) or not ORG_ID_PATTERN.match(org_id):
-        raise ValueError(f"invalid or missing org_id: {org_id!r}")
-    return org_id
 
 
 def tag_rows(rows: list[dict], org_id: str, tags: dict, ingested_at: str) -> list[dict]:

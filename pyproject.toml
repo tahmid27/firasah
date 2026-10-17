@@ -13,6 +13,7 @@ dependencies = [
     "google-cloud-bigquery>=3.43.0",
     "httpx>=0.28.1",
     "prefect>=3.8.4",
+    "pyjwt[crypto]>=2.13.0",
     "python-dotenv>=1.2.3",
     "supabase>=2.31.0",
     "uvicorn[standard]>=0.52.4",
