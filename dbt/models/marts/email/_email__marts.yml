@@ -8,10 +8,15 @@ models:
       Mailchimp is currently the only email platform connected, unlike the
       fundraising and social domains.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: campaign_id
         description: Unique identifier for the campaign, as provided by Mailchimp.
         tests:
-          - unique
+          - unique_per_org
           - not_null
 
       - name: campaign_title
@@ -39,6 +44,11 @@ models:
       stg_mailchimp_audience_stats) — deliberately not deduplicated, so an
       audience-growth-over-time chart stays possible downstream.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: list_id
         description: Unique identifier for the audience/list, as provided by Mailchimp.
         tests:
@@ -54,10 +64,15 @@ models:
       One row per link per campaign: which links in each email were
       clicked, with total and unique click counts. Latest pull per link.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: link_click_id
         description: Campaign ID plus link ID.
         tests:
-          - unique
+          - unique_per_org
           - not_null
 
       - name: campaign_id
@@ -79,10 +94,15 @@ models:
       One row per audience per day: subscribes, unsubscribes, net change
       and email activity. Latest pull per day. Use for a daily growth chart.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: audience_day_id
         description: Audience ID plus date.
         tests:
-          - unique
+          - unique_per_org
           - not_null
 
       - name: list_id
@@ -104,10 +124,15 @@ models:
       One row per audience per month: monthly list growth. Latest pull per
       month.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: audience_month_id
         description: Audience ID plus first day of the month.
         tests:
-          - unique
+          - unique_per_org
           - not_null
 
       - name: list_id

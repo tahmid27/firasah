@@ -113,19 +113,19 @@ def fetch_user_info(access_token: str) -> dict:
 
 
 @flow(name="tiktok-videos-ingestion")
-def tiktok_videos_flow() -> None:
+def tiktok_videos_flow(org_id: str) -> None:
     access_token = refresh_access_token()
 
     videos = fetch_videos(access_token)
     print(f"Total videos fetched: {len(videos)}")
     save_raw_json(videos, "data/raw/tiktok_videos.json")
-    load_raw_to_bigquery(videos, RAW_VIDEOS_TABLE_ID, tags={})
+    load_raw_to_bigquery(videos, RAW_VIDEOS_TABLE_ID, tags={}, org_id=org_id)
 
     user_info = fetch_user_info(access_token)
     print(f"User stats: {user_info}")
     save_raw_json([user_info], "data/raw/tiktok_user_info.json")
-    load_raw_to_bigquery([user_info], RAW_USER_INFO_TABLE_ID, tags={})
+    load_raw_to_bigquery([user_info], RAW_USER_INFO_TABLE_ID, tags={}, org_id=org_id)
 
 
 if __name__ == "__main__":
-    tiktok_videos_flow()
+    tiktok_videos_flow(os.environ["FIRASAH_ORG_ID"])

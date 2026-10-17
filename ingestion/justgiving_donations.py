@@ -156,7 +156,7 @@ def parse_event_ids(value: str) -> list[str]:
 
 
 @flow(name="justgiving-donations-ingestion")
-def justgiving_donations_flow(event_ids: str) -> None:
+def justgiving_donations_flow(org_id: str, event_ids: str) -> None:
     """`event_ids` is one JustGiving event ID or a comma-separated list. A
     charity typically runs several events/appeals; every fundraising page
     under each one is pulled."""
@@ -210,8 +210,8 @@ def justgiving_donations_flow(event_ids: str) -> None:
 
     for name, (donations, page) in fetched.items():
         tags = {"_page_short_name": name}
-        load_raw_to_bigquery(donations, RAW_TABLE_ID, tags=tags)
-        load_raw_to_bigquery([page], RAW_PAGES_TABLE_ID, tags=tags)
+        load_raw_to_bigquery(donations, RAW_TABLE_ID, tags=tags, org_id=org_id)
+        load_raw_to_bigquery([page], RAW_PAGES_TABLE_ID, tags=tags, org_id=org_id)
 
     if failures:
         raise RuntimeError(f"JustGiving pulls that failed: {failures}")
@@ -220,4 +220,4 @@ def justgiving_donations_flow(event_ids: str) -> None:
 if __name__ == "__main__":
     # Argument: one event ID or a comma-separated list (default from .env).
     event_ids = sys.argv[1] if len(sys.argv) > 1 else os.environ["JUSTGIVING_EVENT_IDS"]
-    justgiving_donations_flow(event_ids)
+    justgiving_donations_flow(os.environ["FIRASAH_ORG_ID"], event_ids)

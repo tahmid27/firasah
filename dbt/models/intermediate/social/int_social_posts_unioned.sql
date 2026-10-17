@@ -1,6 +1,7 @@
 with tiktok as (
 
     select
+        org_id,
         'tiktok' as platform,
         cast(video_id as string) as source_post_id,
         posted_at,
@@ -23,13 +24,14 @@ with tiktok as (
         ingested_at
 
     from {{ ref('stg_tiktok_videos') }}
-    qualify row_number() over (partition by video_id order by ingested_at desc) = 1
+    qualify row_number() over (partition by org_id, video_id order by ingested_at desc) = 1
 
 ),
 
 instagram as (
 
     select
+        m.org_id,
         'instagram' as platform,
         cast(m.media_id as string) as source_post_id,
         m.posted_at,
@@ -62,10 +64,11 @@ instagram as (
     left join (
         select *
         from {{ ref('stg_instagram_media_insights') }}
-        qualify row_number() over (partition by media_id order by ingested_at desc) = 1
+        qualify row_number() over (partition by org_id, media_id order by ingested_at desc) = 1
     ) as i
-        on m.media_id = i.media_id
-    qualify row_number() over (partition by m.media_id order by m.ingested_at desc) = 1
+        on m.org_id = i.org_id
+        and m.media_id = i.media_id
+    qualify row_number() over (partition by m.org_id, m.media_id order by m.ingested_at desc) = 1
 
 ),
 
@@ -81,6 +84,7 @@ select
     -- source_post_id alone isn't unique across platforms, same reasoning
     -- as fct_donations.donation_id
     concat(platform, '-', source_post_id) as post_id,
+    org_id,
     platform,
     posted_at,
     caption,

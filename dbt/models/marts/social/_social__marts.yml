@@ -11,12 +11,17 @@ models:
       measured"). TikTok has no reach or saves. Instagram posts from before
       the account became a business account have no insights (nulls).
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: post_id
         description: >
           Cross-platform unique identifier (platform + the platform's own
           post ID, e.g. "tiktok-7123456789").
         tests:
-          - unique
+          - unique_per_org
           - not_null
 
       - name: platform
@@ -82,6 +87,11 @@ models:
       for Instagram rows — no equivalent lifetime-total field exposed by the
       basic account fields currently pulled.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: account_id
         description: >
           Cross-platform unique identifier (platform + the platform's own
@@ -108,6 +118,11 @@ models:
       taps. Latest pull per day. Instagram only for now; TikTok's current
       access doesn't expose daily account activity.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: account_id
         description: Cross-platform account identifier, matching fct_social_account_stats.account_id.
         tests:
@@ -127,6 +142,11 @@ models:
       ingestion run. Not deduplicated — each run is a snapshot; take the
       latest ingested_at for the current audience.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: account_id
         description: Cross-platform account identifier.
         tests:

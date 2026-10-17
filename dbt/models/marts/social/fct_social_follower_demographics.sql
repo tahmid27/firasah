@@ -5,6 +5,7 @@
 -- "the audience right now". Instagram only for now.
 select
     concat('instagram-', cast(account_id as string)) as account_id,
+    org_id,
     'instagram' as platform,
     breakdown_type,
     breakdown_value,

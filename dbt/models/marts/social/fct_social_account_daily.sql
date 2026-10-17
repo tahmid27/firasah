@@ -6,6 +6,7 @@
 -- current access doesn't expose daily account-level activity.
 select
     concat('instagram-', cast(account_id as string)) as account_id,
+    org_id,
     'instagram' as platform,
     insight_date,
     reach,
@@ -21,4 +22,4 @@ select
     ingested_at
 
 from {{ ref('stg_instagram_account_insights_daily') }}
-qualify row_number() over (partition by account_id, insight_date order by ingested_at desc) = 1
+qualify row_number() over (partition by org_id, account_id, insight_date order by ingested_at desc) = 1

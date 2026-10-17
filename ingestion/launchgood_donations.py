@@ -12,6 +12,7 @@ dbt staging model still renames/casts from there like every other source.
 """
 
 import csv
+import os
 import re
 import sys
 from pathlib import Path
@@ -42,17 +43,20 @@ def read_donations_export(path: str | Path) -> list[dict]:
 
 
 @flow(name="launchgood-donations-ingestion")
-def launchgood_donations_flow(path: str) -> None:
+def launchgood_donations_flow(org_id: str, path: str) -> None:
     donations = read_donations_export(path)
     print(f"Parsed {len(donations)} donations from {path}")
 
     save_raw_json(donations, "data/raw/launchgood_donations.json")
 
     load_raw_to_bigquery(
-        donations, RAW_TABLE_ID, tags={"_source_file": Path(path).name}
+        donations,
+        RAW_TABLE_ID,
+        tags={"_source_file": Path(path).name},
+        org_id=org_id,
     )
 
 
 if __name__ == "__main__":
     path = sys.argv[1] if len(sys.argv) > 1 else "data/raw/launchgood_export.csv"
-    launchgood_donations_flow(path)
+    launchgood_donations_flow(os.environ["FIRASAH_ORG_ID"], path)

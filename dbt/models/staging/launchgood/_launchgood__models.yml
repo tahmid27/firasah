@@ -10,6 +10,11 @@ models:
       appear more than once if the same export (or an overlapping one) has
       been ingested more than once. Deduplication belongs in the mart layer.
     columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
       - name: donation_id
         description: Unique identifier for the donation, as provided by LaunchGood.
         tests:

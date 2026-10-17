@@ -7,6 +7,7 @@ with raw as (
 renamed as (
 
     select
+        _org_id as org_id,
         _ig_user_id as account_id,
         breakdown as breakdown_type,
         bucket as breakdown_value,

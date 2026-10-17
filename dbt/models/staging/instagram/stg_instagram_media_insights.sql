@@ -7,6 +7,7 @@ with raw as (
 renamed as (
 
     select
+        _org_id as org_id,
         media_id,
         _ig_user_id as account_id,
         reach,

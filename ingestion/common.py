@@ -9,6 +9,7 @@ about it.
 """
 
 import json
+import re
 import time
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -118,11 +119,39 @@ def save_raw_json(data: list[dict], path: str | Path) -> None:
     print(f"Saved to {path}")
 
 
+# Lowercase letters, digits, "_" and "-"; covers readable dev IDs like
+# "test_charity" and generated UUIDs alike.
+ORG_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{1,63}$")
+
+
+def validate_org_id(org_id: str | None) -> str:
+    """Returns org_id if it is a well-formed tenant ID, otherwise raises.
+    Every raw row must say which charity it belongs to, so a missing or
+    malformed org_id is a hard error — never a default."""
+    if not isinstance(org_id, str) or not ORG_ID_PATTERN.match(org_id):
+        raise ValueError(f"invalid or missing org_id: {org_id!r}")
+    return org_id
+
+
+def tag_rows(rows: list[dict], org_id: str, tags: dict, ingested_at: str) -> list[dict]:
+    """Stamps each row with its tenant, when it arrived, and any
+    source-specific identifiers. The system tags (_org_id, _ingested_at) are
+    applied last, so a source field or caller tag can never overwrite them.
+    """
+    org_id = validate_org_id(org_id)
+    return [
+        {**row, **tags, "_org_id": org_id, "_ingested_at": ingested_at} for row in rows
+    ]
+
+
 @task(retries=2, retry_delay_seconds=10)
-def load_raw_to_bigquery(rows: list[dict], table_id: str, tags: dict) -> None:
-    """Appends rows to a raw landing table, tagging each with _ingested_at
-    plus whatever source-specific identifiers the caller passes in `tags`
-    (e.g. which fundraising page or account they came from). Schema is
+def load_raw_to_bigquery(
+    rows: list[dict], table_id: str, tags: dict, *, org_id: str
+) -> None:
+    """Appends rows to a raw landing table, tagging each with the tenant
+    (`_org_id`, required — see validate_org_id), _ingested_at, plus whatever
+    source-specific identifiers the caller passes in `tags` (e.g. which
+    fundraising page or account they came from). Schema is
     auto-detected from the JSON — the raw layer keeps field names/types
     exactly as the source API sent them; renaming/casting happens later in
     the dbt staging model.
@@ -131,6 +160,10 @@ def load_raw_to_bigquery(rows: list[dict], table_id: str, tags: dict) -> None:
     separate from the source-specific rate-limit/backoff handling in
     get_with_retries, which deals with a different kind of failure.
     """
+    # Checked before anything else, so even an empty load with a bad org_id
+    # fails loudly rather than slipping through
+    validate_org_id(org_id)
+
     if not rows:
         # Deliberate, not an accident: load_table_from_json can't
         # autodetect a schema from an empty list and would fail with a
@@ -141,8 +174,7 @@ def load_raw_to_bigquery(rows: list[dict], table_id: str, tags: dict) -> None:
         print(f"WARNING: 0 rows to load into {table_id}; skipping load")
         return
 
-    ingested_at = datetime.now(UTC).isoformat()
-    tagged_rows = [{**row, **tags, "_ingested_at": ingested_at} for row in rows]
+    tagged_rows = tag_rows(rows, org_id, tags, datetime.now(UTC).isoformat())
 
     client = bigquery.Client()
     job_config = bigquery.LoadJobConfig(

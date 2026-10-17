@@ -1,6 +1,7 @@
 with tiktok as (
 
     select
+        org_id,
         'tiktok' as platform,
         cast(account_id as string) as source_account_id,
         display_name,
@@ -17,6 +18,7 @@ with tiktok as (
 instagram as (
 
     select
+        org_id,
         'instagram' as platform,
         cast(account_id as string) as source_account_id,
         name as display_name,
@@ -42,6 +44,7 @@ unioned as (
 
 select
     concat(platform, '-', source_account_id) as account_id,
+    org_id,
     platform,
     display_name,
     follower_count,
