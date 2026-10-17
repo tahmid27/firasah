@@ -43,3 +43,26 @@ models:
           raw video data carries an equivalent field.
         tests:
           - not_null
+
+  - name: stg_instagram_media_insights
+    description: >
+      Per-post insight metrics from Instagram's insights endpoint (via
+      raw_instagram_media_insights). Thin rename layer, not deduplicated —
+      metrics grow after posting, so int_social_posts_unioned takes the
+      latest row per post. Posts from before the account became a business
+      account have no row here.
+    columns:
+      - name: media_id
+        description: Media item these metrics belong to; matches stg_instagram_media.media_id.
+        tests:
+          - not_null
+
+      - name: reach
+        description: Unique accounts that saw the post. The only metric that is meaningful for every format.
+        tests:
+          - not_null
+
+      - name: view_count
+        description: >
+          Views. Only meaningful for video/Reels — old image and carousel
+          posts report 0, which means "not measured", not "no one saw it".

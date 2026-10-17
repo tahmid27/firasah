@@ -27,6 +27,14 @@ BASE_URL = "https://graph.facebook.com/v26.0"
 
 RAW_MEDIA_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_instagram_media"
 RAW_ACCOUNT_INFO_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_instagram_account_info"
+RAW_MEDIA_INSIGHTS_TABLE_ID = (
+    "firasah-dev-511916.firasah_dev.raw_instagram_media_insights"
+)
+
+# Per-post metrics only available from the separate insights endpoint (the
+# basic /media fields above don't include them). Needs the
+# instagram_manage_insights permission, already granted to the app.
+INSIGHT_METRICS = "reach,views,shares,saved,total_interactions"
 
 
 @task
@@ -76,6 +84,44 @@ def fetch_media(ig_user_id: str) -> list[dict]:
     return media
 
 
+@task
+def fetch_media_insights(media_ids: list[str]) -> list[dict]:
+    """One insights call per post (the endpoint has no bulk form).
+
+    A post whose insights Instagram refuses (HTTP 400, e.g. a media type or
+    age the metrics don't support) is skipped with a log line rather than
+    failing the whole pull — the post still lands via the basic /media
+    fetch, it just has no insight row. Other errors (auth, 5xx after
+    retries) still raise.
+    """
+    insights = []
+    skipped = 0
+
+    with httpx.Client(timeout=30) as client:
+        for media_id in media_ids:
+            try:
+                response = request_with_retries(
+                    client,
+                    "GET",
+                    f"{BASE_URL}/{media_id}/insights",
+                    params={"metric": INSIGHT_METRICS, "access_token": ACCESS_TOKEN},
+                )
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code != 400:
+                    raise
+                skipped += 1
+                print(f"No insights for media {media_id}: {exc.response.text[:200]}")
+                continue
+
+            row = {"media_id": media_id}
+            for metric in response.json()["data"]:
+                row[metric["name"]] = metric["values"][0]["value"]
+            insights.append(row)
+
+    print(f"Fetched insights for {len(insights)} posts ({skipped} skipped)")
+    return insights
+
+
 @flow(name="instagram-posts-ingestion")
 def instagram_posts_flow(ig_user_id: str) -> None:
     account_info = fetch_account_info(ig_user_id)
@@ -92,6 +138,12 @@ def instagram_posts_flow(ig_user_id: str) -> None:
     print(f"Total media fetched: {len(media)}")
     save_raw_json(media, "data/raw/instagram_media.json")
     load_raw_to_bigquery(media, RAW_MEDIA_TABLE_ID, tags={"_ig_user_id": ig_user_id})
+
+    insights = fetch_media_insights([m["id"] for m in media])
+    save_raw_json(insights, "data/raw/instagram_media_insights.json")
+    load_raw_to_bigquery(
+        insights, RAW_MEDIA_INSIGHTS_TABLE_ID, tags={"_ig_user_id": ig_user_id}
+    )
 
 
 if __name__ == "__main__":
