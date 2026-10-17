@@ -14,7 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v10
+      # setup-uv publishes exact version tags only (no moving `v10` tag)
+      - uses: astral-sh/setup-uv@v10.3.0
 
       - name: Install dependencies (exactly as locked)
         run: uv sync --locked
