@@ -95,7 +95,6 @@ def instagram_posts_flow(ig_user_id: str) -> None:
 
 
 if __name__ == "__main__":
-    # Default: the Instagram Business Account linked to the "Firasah" Page,
-    # which is itself linked to the real Test Instagram account.
-    ig_user_id = sys.argv[1] if len(sys.argv) > 1 else "example-fundraising-page"
+    # Default: the Instagram Business Account ID from .env
+    ig_user_id = sys.argv[1] if len(sys.argv) > 1 else os.environ["INSTAGRAM_USER_ID"]
     instagram_posts_flow(ig_user_id)

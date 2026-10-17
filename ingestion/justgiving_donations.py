@@ -73,5 +73,7 @@ def justgiving_donations_flow(page_short_name: str) -> None:
 
 
 if __name__ == "__main__":
-    page_short_name = sys.argv[1] if len(sys.argv) > 1 else "example-fundraising-page"
+    page_short_name = (
+        sys.argv[1] if len(sys.argv) > 1 else os.environ["JUSTGIVING_PAGE_SHORT_NAME"]
+    )
     justgiving_donations_flow(page_short_name)

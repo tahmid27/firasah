@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-REDIRECT_URI = "https://your-ngrok-static-domain.ngrok-free.dev/auth/tiktok/callback"
+REDIRECT_URI = os.environ["TIKTOK_REDIRECT_URI"]
 
 code = sys.argv[1]
 
