@@ -78,15 +78,15 @@ def run_dbt(command: str) -> None:
 
 @flow(name="firasah-refresh")
 def firasah_refresh_flow(
-    event_id: str | None = None,
+    event_ids: str | None = None,
     ig_user_id: str | None = None,
 ) -> None:
     # Defaults come from .env so no account identifiers live in source code
-    event_id = event_id or os.environ["JUSTGIVING_EVENT_ID"]
+    event_ids = event_ids or os.environ["JUSTGIVING_EVENT_IDS"]
     ig_user_id = ig_user_id or os.environ["INSTAGRAM_USER_ID"]
     failures: list[str] = []
 
-    _run_source("justgiving", justgiving_donations_flow, failures, event_id)
+    _run_source("justgiving", justgiving_donations_flow, failures, event_ids)
     _run_source("tiktok", tiktok_videos_flow, failures)
     _run_source("instagram", instagram_posts_flow, failures, ig_user_id)
     _run_source("mailchimp", mailchimp_campaigns_flow, failures)

@@ -122,9 +122,44 @@ def fetch_event_page_names(event_id: str) -> list[str]:
     return names
 
 
+def parse_event_ids(value: str) -> list[str]:
+    """"4100201, 4100202" -> ["4100201", "4100202"]. Blanks and repeats are
+    dropped (order kept), so a stray comma or a repeated ID is harmless."""
+    ids = []
+    for part in value.split(","):
+        part = part.strip()
+        if part and part not in ids:
+            ids.append(part)
+    return ids
+
+
 @flow(name="justgiving-donations-ingestion")
-def justgiving_donations_flow(event_id: str) -> None:
-    page_names = fetch_event_page_names(event_id)
+def justgiving_donations_flow(event_ids: str) -> None:
+    """`event_ids` is one JustGiving event ID or a comma-separated list. A
+    charity typically runs several events/appeals; every fundraising page
+    under each one is pulled."""
+    failures: list[str] = []
+
+    # Discover the pages. One event that can't be listed (wrong ID, API
+    # error) is skipped and reported at the end; the others carry on. A page
+    # belongs to one event, but repeats are dropped in case the same ID is
+    # listed twice.
+    page_names: list[str] = []
+    for event_id in parse_event_ids(event_ids):
+        try:
+            names = fetch_event_page_names(event_id)
+        except Exception as exc:  # noqa: BLE001 — per-event isolation
+            print(f"[justgiving] event {event_id} FAILED: {exc!r}")
+            failures.append(f"event {event_id}")
+            continue
+        if not names:
+            # JustGiving answers an unknown event ID with 200 and an empty
+            # list, not a 404 — so a typo in the config would otherwise
+            # pull nothing, silently, forever.
+            print(f"[justgiving] event {event_id} returned no fundraising pages")
+            failures.append(f"event {event_id} (no pages — wrong ID?)")
+            continue
+        page_names.extend(n for n in names if n not in page_names)
 
     # Fetch everything before loading anything: a failed fetch then lands
     # zero rows for that page, so the snapshot never sees a half-finished
@@ -132,14 +167,13 @@ def justgiving_donations_flow(event_id: str) -> None:
     # stop the others — its previous batch simply stays the latest one,
     # which is the safe direction (stale, never falsely refunded).
     fetched: dict[str, tuple[list[dict], dict]] = {}
-    failures: list[str] = []
     for name in page_names:
         try:
             donations = fetch_donations(name)
             page = fetch_page_details(name)
         except Exception as exc:  # noqa: BLE001 — per-page isolation
             print(f"[justgiving] page {name} FAILED: {exc!r}")
-            failures.append(name)
+            failures.append(f"page {name}")
             continue
         print(f"Page {name!r}: {len(donations)} donations (event: {page.get('eventName')!r})")
         fetched[name] = (donations, page)
@@ -154,11 +188,10 @@ def justgiving_donations_flow(event_id: str) -> None:
         load_raw_to_bigquery([page], RAW_PAGES_TABLE_ID, tags=tags)
 
     if failures:
-        raise RuntimeError(f"JustGiving pages that failed to fetch: {failures}")
+        raise RuntimeError(f"JustGiving pulls that failed: {failures}")
 
 
 if __name__ == "__main__":
-    # Argument: the JustGiving event ID (default from .env). Every fundraising
-    # page under that event is pulled.
-    event_id = sys.argv[1] if len(sys.argv) > 1 else os.environ["JUSTGIVING_EVENT_ID"]
-    justgiving_donations_flow(event_id)
+    # Argument: one event ID or a comma-separated list (default from .env).
+    event_ids = sys.argv[1] if len(sys.argv) > 1 else os.environ["JUSTGIVING_EVENT_IDS"]
+    justgiving_donations_flow(event_ids)
