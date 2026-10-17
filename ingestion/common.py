@@ -79,6 +79,16 @@ def load_raw_to_bigquery(rows: list[dict], table_id: str, tags: dict) -> None:
     separate from the source-specific rate-limit/backoff handling in
     get_with_retries, which deals with a different kind of failure.
     """
+    if not rows:
+        # Deliberate, not an accident: load_table_from_json can't
+        # autodetect a schema from an empty list and would fail with a
+        # confusing error. Skipping is also the safe choice for
+        # refund-aware sources — the previous batch stays the latest one,
+        # so an empty response (API hiccup, wrong page) can't mass-
+        # invalidate every donation in the snapshot.
+        print(f"WARNING: 0 rows to load into {table_id}; skipping load")
+        return
+
     ingested_at = datetime.now(timezone.utc).isoformat()
     tagged_rows = [{**row, **tags, "_ingested_at": ingested_at} for row in rows]
 

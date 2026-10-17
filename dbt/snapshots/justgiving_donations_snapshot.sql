@@ -11,12 +11,26 @@
 }}
 
 -- raw_justgiving_donations is append-only, so the same donation can appear
--- more than once across pulls. A snapshot needs exactly one row per
--- unique_key on every run, so we take the most recently ingested version.
--- invalidate_hard_deletes=True is what actually solves the refund problem:
--- if a donation_id stops showing up here (e.g. it gets refunded and drops
--- out of the API response), dbt marks it as no-longer-valid instead of us
--- having to detect the disappearance ourselves.
+-- once per pull. invalidate_hard_deletes=True marks a donation_id as
+-- no-longer-valid when it stops appearing in THIS query's result (e.g. it
+-- was refunded and dropped out of the API response) — so this query must
+-- return only the latest complete pull per page, not the accumulated
+-- history. If it returned every donation ever seen, a refunded donation's
+-- old rows would keep it in the result forever and the refund would never
+-- be detected.
+--
+-- _ingested_at is stamped once per ingestion run (see load_raw_to_bigquery
+-- in ingestion/common.py), so all rows from one pull share a value: it
+-- works as a batch ID. dense_rank() = 1 keeps the whole newest batch per
+-- page (row_number() would keep just one row). A pull fetches every page
+-- of donations before loading anything, so a crashed run lands zero rows
+-- and this never sees a half-finished batch.
+--
+-- Constraint: this relies on every pull being COMPLETE. Switching the
+-- connector to incremental fetching ("only donations since last time")
+-- would make every unseen donation look refunded. If full pulls ever get
+-- too expensive, the answer is windowed delete-detection, not incremental
+-- fetch bolted on.
 select
     donation_id,
     donor_name,
@@ -27,6 +41,6 @@ select
     donation_channel,
     page_short_name
 from {{ ref('stg_justgiving_donations') }}
-qualify row_number() over (partition by donation_id order by ingested_at desc) = 1
+qualify dense_rank() over (partition by page_short_name order by ingested_at desc) = 1
 
 {% endsnapshot %}
