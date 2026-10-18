@@ -159,6 +159,41 @@ MARTS: dict[str, frozenset[str]] = {
             "soft_bounces",
         }
     ),
+    "dim_fundraising_pages": frozenset(
+        {
+            "page_short_name",
+            "fundraiser_name",
+            "project_name",
+            "page_status",
+            "currency_code",
+            "fundraising_target",
+            "total_raised",
+            "total_estimated_gift_aid",
+            "donation_count",
+        }
+    ),
+    "fct_mailchimp_campaign_hourly": frozenset(
+        {
+            "campaign_id",
+            "send_time",
+            "hour_start",
+            "hours_after_send",
+            "emails_sent",
+            "unique_opens",
+            "recipient_clicks",
+        }
+    ),
+    "fct_source_status": frozenset(
+        {
+            "source",
+            "last_data_at",
+            "last_run_at",
+            "last_run_status",
+            "last_error_type",
+            "last_http_status",
+            "last_success_at",
+        }
+    ),
     "fct_mailchimp_audience_monthly": frozenset(
         {
             "list_id",
@@ -256,7 +291,28 @@ class Agg:
     alias: str
 
 
-SelectItem = str | Bucket | Agg
+@dataclass(frozen=True)
+class RangeBucket:
+    """Index of the band a number falls in: below edges[0] is 0, and so on."""
+
+    column: str
+    edges: tuple[float, ...]
+    alias: str
+
+
+@dataclass(frozen=True)
+class Part:
+    """Hour of day (0-23) or day of week (1 = Sunday) of a timestamp, in UK time."""
+
+    column: str
+    part: str
+    alias: str
+
+
+SelectItem = str | Bucket | Agg | RangeBucket | Part
+
+_PARTS = {"hour": "HOUR", "dayofweek": "DAYOFWEEK"}
+TIMEZONE = "Europe/London"
 
 
 def _check_alias(alias: str) -> str:
@@ -287,6 +343,25 @@ def _select_sql(mart: str, item: SelectItem) -> str:
         else:
             expression = f"{item.func}({inner})"
         return f"{expression} as {_check_alias(item.alias)}"
+    if isinstance(item, RangeBucket):
+        edges = [float(edge) for edge in item.edges]
+        if not edges or edges != sorted(edges):
+            raise ValueError("edges must be a non-empty ascending sequence")
+        column = _check_column(mart, item.column)
+        array = ", ".join(repr(edge) for edge in edges)
+        # Both sides must be the same type; banding doesn't need NUMERIC precision
+        return (
+            f"range_bucket(cast({column} as float64), [{array}])"
+            f" as {_check_alias(item.alias)}"
+        )
+    if isinstance(item, Part):
+        if item.part not in _PARTS:
+            raise ValueError(f"part {item.part!r} is not allowed")
+        column = _check_column(mart, item.column)
+        return (
+            f"extract({_PARTS[item.part]} from {column} at time zone '{TIMEZONE}')"
+            f" as {_check_alias(item.alias)}"
+        )
     raise ValueError(f"unsupported select item: {item!r}")
 
 

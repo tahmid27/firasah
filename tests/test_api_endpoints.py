@@ -2,7 +2,7 @@
 every protected endpoint."""
 
 import re
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -51,7 +51,7 @@ def org_data(tag: str, amount: float) -> dict:
                 ],
             ),
             (
-                "fundraiser_name",
+                "select project_name, fundraiser_name, source",
                 [
                     {
                         "project_name": f"{tag} appeal",
@@ -67,7 +67,7 @@ def org_data(tag: str, amount: float) -> dict:
         ],
         "fct_social_account_stats": [
             (
-                "as followers",
+                "as period, platform, max(follower_count) as followers",
                 [
                     {
                         "period": date(2026, 10, 16),
@@ -106,22 +106,106 @@ def org_data(tag: str, amount: float) -> dict:
     }
 
 
+DATE_NAMES = {"period", "day", "month_start", "insight_date", "activity_date"}
+TIME_NAMES = {"send_time", "posted_at", "last", "as_of", "hour_start"}
+FIXED = {
+    "platform": "instagram",
+    "source": "justgiving",
+    "media_type": "IMAGE",
+    "media_product_type": "FEED",
+    "breakdown_type": "age",
+    "last_run_status": "success",
+    "currency_code": "GBP",
+    "page_status": "Active",
+    "hour": 10,
+    "dow": 2,
+    "band": 1,
+    "hours_after_send": 1,
+    "last_http_status": None,
+}
+COUNT_NAMES = {
+    "donations",
+    "posts",
+    "n",
+    "campaigns",
+    "fundraisers",
+    "emails_sent",
+    "unique_opens",
+    "unique_clicks",
+    "total_clicks",
+    "unsubscribe_count",
+    "hard_bounces",
+    "soft_bounces",
+    "follower_count",
+}
+TEXT_HINTS = (
+    "name",
+    "title",
+    "caption",
+    "permalink",
+    "url",
+    "subject",
+    "value",
+    "traffic",
+    "error",
+    "_id",
+)
+
+
+def output_names(sql: str) -> list[str]:
+    """Column names a generated query returns (alias, or the bare column)."""
+    select = sql[len("select ") : sql.index(" from `")]
+    items, depth, current = [], 0, ""
+    for char in select:
+        depth += char in "(["
+        depth -= char in ")]"
+        if char == "," and depth == 0:
+            items.append(current.strip())
+            current = ""
+        else:
+            current += char
+    items.append(current.strip())
+    return [item.rsplit(" as ", 1)[-1] for item in items]
+
+
+def synthesise(name: str, tag: str, amount: float):
+    if name in FIXED:
+        return FIXED[name]
+    if name in DATE_NAMES:
+        return OCT
+    if name in TIME_NAMES or name.endswith("_at"):
+        return datetime(2026, 10, 5, 12, tzinfo=UTC)
+    if name.startswith("is_"):
+        return True
+    if name in COUNT_NAMES:
+        return int(amount)
+    if any(hint in name for hint in TEXT_HINTS):
+        return f"{tag} {name}"
+    return amount
+
+
 class FakeExecutor:
     """Stands in for BigQuery: answers only with the data of the org named in
-    the query's @org_id parameter, and records every call."""
+    the query's @org_id parameter, and records every call. Uses canned rows
+    where a marker matches the SQL, otherwise generates one row from the
+    query's output columns."""
 
-    def __init__(self, data_by_org):
+    def __init__(self, data_by_org, identity_by_org):
         self.data_by_org = data_by_org
+        self.identity_by_org = identity_by_org
         self.calls = []
 
     def run(self, sql, params):
         org = {p.name: p.value for p in params}["org_id"]
         self.calls.append({"org": org, "sql": sql, "params": params})
-        mart = re.search(r"\.(fct_\w+)`", sql).group(1)
+        mart = re.search(r"\.(\w+)`", sql).group(1)
         for marker, rows in self.data_by_org.get(org, {}).get(mart, []):
             if marker in sql:
                 return rows
-        return []
+        if org not in self.identity_by_org:
+            return []
+        tag, amount = self.identity_by_org[org]
+        return [{name: synthesise(name, tag, amount) for name in output_names(sql)}]
 
 
 @pytest.fixture
@@ -130,7 +214,8 @@ def executor():
         {
             "charity_a": org_data("A-ONLY", 100.0),
             "charity_b": org_data("B-ONLY", 99999.0),
-        }
+        },
+        {"charity_a": ("A-ONLY", 100.0), "charity_b": ("B-ONLY", 99999.0)},
     )
 
 
@@ -155,6 +240,10 @@ def protected_get_paths():
     )
 
 
+def fill(path: str) -> str:
+    return re.sub(r"\{[^}]+\}", "campaign123", path)
+
+
 # --- cross-tenant isolation, every endpoint -----------------------------------
 
 
@@ -169,7 +258,7 @@ def protected_get_paths():
 def test_each_charity_only_ever_sees_its_own_data(
     client, executor, path, user, own_org, other_markers
 ):
-    response = client.get(path, headers=bearer(token(user)))
+    response = client.get(fill(path), headers=bearer(token(user)))
 
     assert response.status_code == 200
     assert not [m for m in other_markers if m in response.text]
@@ -179,7 +268,7 @@ def test_each_charity_only_ever_sees_its_own_data(
 @pytest.mark.parametrize("path", protected_get_paths())
 def test_another_charitys_id_in_the_request_is_ignored(client, executor, path):
     response = client.get(
-        path,
+        fill(path),
         params={"org_id": "charity_b", "org": "charity_b"},
         headers={**bearer(token(USER_A)), "X-Org-Id": "charity_b"},
     )
@@ -194,7 +283,7 @@ def test_data_endpoints_actually_query_the_warehouse(client, executor):
     for path in protected_get_paths():
         if path != "/me":
             executor.calls.clear()
-            client.get(path, headers=bearer(token(USER_A)))
+            client.get(fill(path), headers=bearer(token(USER_A)))
             assert executor.calls, path
 
 
@@ -345,3 +434,456 @@ def test_no_response_model_has_a_credential_shaped_field():
         for field in model.model_fields
         if suspicious.search(field)
     ] == []
+
+
+# --- logic of the newer endpoints --------------------------------------------
+
+
+def client_with(rules: dict[str, list], identity=None) -> TestClient:
+    """A client whose fake warehouse answers charity_a's queries from `rules`
+    ({mart: [(sql marker, rows), ...]})."""
+    executor = FakeExecutor(
+        {"charity_a": rules}, {"charity_a": identity} if identity else {}
+    )
+    main.app.dependency_overrides[get_executor] = lambda: executor
+    return TestClient(main.app)
+
+
+def test_gift_sizes_maps_range_buckets_to_labelled_bands(client):
+    body = get(
+        client_with(
+            {
+                "fct_donations": [
+                    (
+                        "range_bucket",
+                        [
+                            {"band": 0, "donations": 4, "raised": 20.0},
+                            {"band": 5, "donations": 1, "raised": 500.0},
+                        ],
+                    )
+                ]
+            }
+        ),
+        "/fundraising/gift-sizes",
+    )
+
+    assert [b["band"] for b in body["bands"]] == [
+        "£0–10",
+        "£10–25",
+        "£25–50",
+        "£50–100",
+        "£100–250",
+        "£250+",
+    ]
+    assert body["bands"][0]["donations"] == 4
+    assert body["bands"][5] == {
+        "band": "£250+",
+        "min_amount": 250.0,
+        "max_amount": None,
+        "donations": 1,
+        "raised": 500.0,
+    }
+    assert body["bands"][2]["donations"] == 0
+
+
+def test_gift_aid_is_a_quarter_of_eligible_donations(client):
+    body = get(
+        client_with(
+            {
+                "fct_donations": [
+                    (
+                        "is_gift_aid = @p",
+                        [{"period": OCT, "raised": 80.0, "donations": 2}],
+                    ),
+                    ("as period", [{"period": OCT, "raised": 200.0, "donations": 8}]),
+                ],
+                "dim_fundraising_pages": [("estimate", [{"estimate": 12.5}])],
+            }
+        ),
+        "/fundraising/gift-aid",
+    )
+
+    assert body["eligible_amount"] == 80.0
+    assert body["claim_value"] == 20.0
+    assert body["gift_aid_share_pct"] == 25.0
+    assert body["justgiving_estimated_gift_aid"] == 12.5
+    assert body["data"][-1] == {
+        "period": "2026-10-01",
+        "eligible_amount": 80.0,
+        "claim_value": 20.0,
+    }
+
+
+def test_timing_converts_bigquery_weekdays_and_fills_the_grid(client):
+    # BigQuery DAYOFWEEK 1 = Sunday; the API uses ISO (7 = Sunday)
+    body = get(
+        client_with(
+            {
+                "fct_donations": [
+                    (
+                        "DAYOFWEEK",
+                        [{"dow": 1, "hour": 20, "donations": 3, "raised": 60.0}],
+                    )
+                ]
+            }
+        ),
+        "/fundraising/timing",
+    )
+
+    assert len(body["cells"]) == 7 * 24
+    sunday_8pm = [c for c in body["cells"] if c["count"]]
+    assert sunday_8pm == [{"day_of_week": 7, "hour": 20, "count": 3, "value": 60.0}]
+
+
+def test_targets_report_progress_highest_first(client):
+    rows = [
+        {
+            "fundraiser_name": "half",
+            "project_name": "p",
+            "page_status": "Active",
+            "fundraising_target": 200,
+            "total_raised": 100,
+        },
+        {
+            "fundraiser_name": "over",
+            "project_name": "p",
+            "page_status": "Active",
+            "fundraising_target": 100,
+            "total_raised": 150,
+        },
+    ]
+    body = get(
+        client_with({"dim_fundraising_pages": [("fundraising_target", rows)]}),
+        "/fundraising/targets",
+    )
+
+    assert [(r["fundraiser_name"], r["progress_pct"]) for r in body["rows"]] == [
+        ("over", 150.0),
+        ("half", 50.0),
+    ]
+
+
+def test_net_followers_is_the_change_between_periods(client):
+    rows = [
+        {
+            "period": date(2026, 9, 21),
+            "platform": "instagram",
+            "account_id": "a",
+            "followers": 100,
+        },
+        {
+            "period": date(2026, 9, 28),
+            "platform": "instagram",
+            "account_id": "a",
+            "followers": 110,
+        },
+        {
+            "period": date(2026, 10, 12),
+            "platform": "instagram",
+            "account_id": "a",
+            "followers": 105,
+        },
+    ]
+    body = get(
+        client_with({"fct_social_account_stats": [("account_id", rows)]}),
+        "/social/net-followers",
+        start="2026-09-28",
+        end="2026-10-18",
+    )
+
+    assert body["data"] == [
+        {"period": "2026-09-28", "instagram": 10.0},
+        {"period": "2026-10-05", "instagram": None},  # no reading that week
+        {"period": "2026-10-12", "instagram": None},  # nothing to compare with
+    ]
+
+
+def test_posts_rank_by_engagement_with_unknowns_last(client):
+    base = {
+        "caption": "c",
+        "permalink": "p",
+        "share_count": 0,
+        "save_count": 0,
+        "comment_count": 0,
+    }
+    rows = [
+        {
+            **base,
+            "post_id": "ig-low",
+            "platform": "instagram",
+            "posted_at": datetime(2026, 10, 1, tzinfo=UTC),
+            "media_type": "IMAGE",
+            "media_product_type": "FEED",
+            "view_count": None,
+            "reach": 100,
+            "like_count": 5,
+        },
+        {
+            **base,
+            "post_id": "ig-reel",
+            "platform": "instagram",
+            "posted_at": datetime(2026, 10, 2, tzinfo=UTC),
+            "media_type": "VIDEO",
+            "media_product_type": "REELS",
+            "view_count": 900,
+            "reach": 100,
+            "like_count": 20,
+        },
+        {
+            **base,
+            "post_id": "ig-old",
+            "platform": "instagram",
+            "posted_at": datetime(2017, 1, 1, tzinfo=UTC),
+            "media_type": "IMAGE",
+            "media_product_type": "FEED",
+            "view_count": None,
+            "reach": None,
+            "like_count": 9,
+        },
+        {
+            **base,
+            "post_id": "tt",
+            "platform": "tiktok",
+            "posted_at": datetime(2026, 10, 3, tzinfo=UTC),
+            "media_type": "VIDEO",
+            "media_product_type": None,
+            "view_count": 200,
+            "reach": None,
+            "like_count": 20,
+        },
+    ]
+    body = get(client_with({"fct_social_posts": [("post_id", rows)]}), "/social/posts")
+
+    assert [
+        (r["post_id"], r["format"], r["engagement_rate"]) for r in body["rows"]
+    ] == [
+        ("ig-reel", "Reel", 0.2),
+        ("tt", "TikTok video", 0.1),  # interactions / views for TikTok
+        ("ig-low", "Image", 0.05),  # interactions / reach for Instagram
+        ("ig-old", "Image", None),  # predates insights: no reach
+    ]
+    assert body["rows"][1]["view_to_like_rate"] == 0.1
+
+
+def test_demographic_shares_are_of_classified_followers(client):
+    body = get(
+        client_with(
+            {
+                "fct_social_follower_demographics": [
+                    (
+                        "max(ingested_at)",
+                        [{"as_of": datetime(2026, 10, 18, tzinfo=UTC)}],
+                    ),
+                    (
+                        "breakdown_type",
+                        [
+                            {
+                                "breakdown_type": "gender",
+                                "breakdown_value": "F",
+                                "follower_count": 30,
+                            },
+                            {
+                                "breakdown_type": "gender",
+                                "breakdown_value": "M",
+                                "follower_count": 90,
+                            },
+                        ],
+                    ),
+                ]
+            }
+        ),
+        "/social/demographics",
+    )
+
+    assert body["breakdowns"]["gender"] == [
+        {"value": "F", "followers": 30, "share_pct": 25.0},
+        {"value": "M", "followers": 90, "share_pct": 75.0},
+    ]
+
+
+def test_email_lift_compares_two_days_with_the_baseline(client):
+    sent = datetime(2026, 10, 10, 9, tzinfo=UTC)
+    daily = [
+        {"day": date(2026, 10, 10) - timedelta(days=i), "raised": 10.0, "donations": 1}
+        for i in range(1, 29)
+    ]
+    daily += [
+        {"day": date(2026, 10, 10), "raised": 50.0, "donations": 3},
+        {"day": date(2026, 10, 11), "raised": 30.0, "donations": 2},
+    ]
+    body = get(
+        client_with(
+            {
+                "fct_mailchimp_campaigns": [
+                    (
+                        "campaign_id",
+                        [
+                            {
+                                "campaign_id": "c1",
+                                "campaign_title": "Appeal",
+                                "send_time": sent,
+                            }
+                        ],
+                    )
+                ],
+                "fct_donations": [("as day", daily)],
+            }
+        ),
+        "/appeals/email-lift",
+    )
+
+    row = body["rows"][0]
+    assert (row["raised_2_days"], row["donations_2_days"], row["typical_2_days"]) == (
+        80.0,
+        5,
+        20.0,
+    )
+    assert row["lift_pct"] == 300.0
+
+
+def test_window_report_compares_with_the_window_before(client):
+    body = get(
+        client_with({}, identity=("A-ONLY", 100.0)),
+        "/appeals/window-report",
+        start="2026-10-01",
+        end="2026-10-10",
+    )
+
+    assert (body["current"]["start"], body["current"]["end"]) == (
+        "2026-10-01",
+        "2026-10-10",
+    )
+    assert (body["previous"]["start"], body["previous"]["end"]) == (
+        "2026-09-21",
+        "2026-09-30",
+    )
+
+
+def test_data_health_lists_every_source_even_unconnected_ones(client):
+    rows = [
+        {
+            "source": "instagram",
+            "last_data_at": datetime(2026, 10, 18, 6, tzinfo=UTC),
+            "last_run_at": None,
+            "last_run_status": "failed",
+            "last_error_type": "HTTPStatusError",
+            "last_http_status": 401,
+            "last_success_at": None,
+        }
+    ]
+    from api.data import get_now
+
+    main.app.dependency_overrides[get_now] = lambda: datetime(
+        2026, 10, 18, 12, tzinfo=UTC
+    )
+    body = get(
+        client_with({"fct_source_status": [("source", rows)]}), "/data-health/sources"
+    )
+
+    by_source = {s["source"]: s for s in body["sources"]}
+    assert list(by_source) == [
+        "justgiving",
+        "launchgood",
+        "instagram",
+        "tiktok",
+        "mailchimp",
+    ]
+    assert by_source["instagram"]["hours_since_data"] == 6.0
+    assert by_source["instagram"]["last_http_status"] == 401
+    assert by_source["tiktok"]["last_data_at"] is None
+
+
+def test_another_charitys_campaign_is_not_found_and_looks_like_a_missing_one(client):
+    owned = {("charity_a", "a-camp"), ("charity_b", "b-camp")}
+
+    class OwnershipExecutor:
+        def run(self, sql, params):
+            values = {p.name: p.value for p in params}
+            if "fct_mailchimp_campaigns" in sql:
+                key = (values["org_id"], values["p0"])
+                return (
+                    [{"campaign_id": key[1], "campaign_title": "t"}]
+                    if key in owned
+                    else []
+                )
+            return []
+
+    main.app.dependency_overrides[get_executor] = lambda: OwnershipExecutor()
+    as_a = bearer(token(USER_A))
+
+    own = client.get("/email/campaigns/a-camp/links", headers=as_a)
+    theirs = client.get("/email/campaigns/b-camp/links", headers=as_a)
+    missing = client.get("/email/campaigns/no-such/links", headers=as_a)
+
+    assert own.status_code == 200
+    assert theirs.status_code == missing.status_code == 404
+    assert theirs.json() == missing.json()
+    assert (
+        client.get(
+            "/email/campaigns/b-camp/links", headers=bearer(token(USER_B))
+        ).status_code
+        == 200
+    )
+
+
+def test_campaign_ids_with_odd_characters_are_rejected(client):
+    response = client.get(
+        "/email/campaigns/a%20b';--/links", headers=bearer(token(USER_A))
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/fundraising/gift-sizes",
+        "/fundraising/zakat",
+        "/fundraising/traffic-sources",
+        "/fundraising/timing",
+    ],
+)
+def test_totals_endpoints_accept_multi_year_ranges(client, path):
+    response = client.get(
+        path, params={"start": "2022-01-01"}, headers=bearer(token(USER_A))
+    )
+
+    assert response.status_code == 200
+
+
+def test_old_instagram_posts_get_no_reach_based_engagement_rate(client):
+    from api.data import get_now
+
+    main.app.dependency_overrides[get_now] = lambda: datetime(2026, 10, 18, tzinfo=UTC)
+    base = {
+        "caption": "c",
+        "permalink": "p",
+        "share_count": 0,
+        "save_count": 0,
+        "comment_count": 0,
+        "view_count": None,
+        "platform": "instagram",
+        "media_type": "IMAGE",
+        "media_product_type": "FEED",
+    }
+    rows = [
+        # Real shape of the bug: lifetime likes, but reach only covers what's left
+        {
+            **base,
+            "post_id": "old",
+            "posted_at": datetime(2018, 7, 7, tzinfo=UTC),
+            "reach": 8,
+            "like_count": 68,
+        },
+        {
+            **base,
+            "post_id": "new",
+            "posted_at": datetime(2026, 9, 1, tzinfo=UTC),
+            "reach": 200,
+            "like_count": 20,
+        },
+    ]
+    body = get(client_with({"fct_social_posts": [("post_id", rows)]}), "/social/posts")
+
+    rates = {r["post_id"]: r["engagement_rate"] for r in body["rows"]}
+    assert rates == {"new": 0.1, "old": None}

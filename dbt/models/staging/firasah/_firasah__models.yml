@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: stg_refresh_runs
+    description: Refresh-flow outcomes per source per run.
+    columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
+      - name: source
+        description: Connector name (justgiving, launchgood, instagram, tiktok, mailchimp).
+        tests:
+          - not_null
+
+      - name: status
+        description: success, failed or skipped.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["success", "failed", "skipped"]

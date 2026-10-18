@@ -124,3 +124,25 @@ models:
         description: >
           Whether the donor opted in to marketing contact. LaunchGood only —
           null for JustGiving (not exposed by its donations endpoint).
+
+  - name: dim_fundraising_pages
+    description: >
+      One row per JustGiving fundraising page (latest pull): project, owner,
+      status, target and JustGiving's own totals, including its estimate of
+      Gift Aid. A fundraising_target of 0 means the page has no target.
+    columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
+      - name: page_short_name
+        description: The page's URL slug.
+        tests:
+          - not_null
+          - unique_per_org
+
+      - name: fundraiser_name
+        description: Page title, matching fct_donations.fundraiser_name.
+        tests:
+          - not_null

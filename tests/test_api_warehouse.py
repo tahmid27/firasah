@@ -133,3 +133,44 @@ def test_query_mart_hands_the_executor_the_callers_org():
 
     assert rows == [{"amount": 10}]
     assert params_by_name(executor.params)["org_id"] == "charity_a"
+
+
+def test_range_bucket_and_uk_time_parts():
+    from api.warehouse import Agg, Part, RangeBucket
+
+    sql, _ = build_query(
+        SETTINGS,
+        CTX_A,
+        "fct_donations",
+        [
+            RangeBucket("amount", (10, 25), "band"),
+            Part("donation_date", "hour", "hour"),
+            Agg("count", "*", "n"),
+        ],
+    )
+
+    assert "range_bucket(cast(amount as float64), [10.0, 25.0]) as band" in sql
+    assert (
+        "extract(HOUR from donation_date at time zone 'Europe/London') as hour" in sql
+    )
+    assert sql.endswith("group by 1, 2")
+
+
+@pytest.mark.parametrize(
+    "item_factory",
+    [
+        lambda m: m.RangeBucket("amount", (25, 10), "band"),  # not ascending
+        lambda m: m.RangeBucket("amount", (), "band"),
+        lambda m: m.RangeBucket("donor_email", (10,), "band"),
+        lambda m: m.Part("donation_date", "minute", "m"),
+        lambda m: m.Agg("median", "amount", "x"),
+        lambda m: m.Agg("sum", "*", "x"),
+        lambda m: m.Bucket("donation_date", "year", "period"),
+        lambda m: m.Agg("sum", "amount", "Bad Alias"),
+    ],
+)
+def test_unsafe_expressions_are_rejected(item_factory):
+    import api.warehouse as m
+
+    with pytest.raises(ValueError):
+        build_query(SETTINGS, CTX_A, "fct_donations", [item_factory(m)])

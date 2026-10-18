@@ -133,3 +133,21 @@ models:
         description: First day of the month the figures cover.
         tests:
           - not_null
+
+  - name: stg_mailchimp_campaign_timeseries
+    description: Hour-by-hour opens and clicks for the 24 hours after each campaign send, per pull.
+    columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
+      - name: campaign_id
+        description: Campaign the hour belongs to.
+        tests:
+          - not_null
+
+      - name: hour_start
+        description: Start of the hour.
+        tests:
+          - not_null

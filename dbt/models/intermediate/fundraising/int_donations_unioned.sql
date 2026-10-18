@@ -56,7 +56,9 @@ launchgood as (
         org_id,
         'launchgood' as source,
         cast(donation_id as string) as source_donation_id,
-        donation_date,
+        -- LaunchGood exports the date and the time of day as separate columns
+        coalesce(timestamp(datetime(date(donation_date), donation_time)), donation_date)
+            as donation_date,
         amount,
         currency_code,
         donor_display_name as donor_name,

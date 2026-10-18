@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: fct_source_status
+    description: Per org and source, when data last landed and how the last refresh run went. Backs the data-health page.
+    columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
+      - name: source
+        description: Connector name.
+        tests:
+          - not_null
+          - unique_per_org
