@@ -51,5 +51,10 @@ def get_today() -> date:
     return datetime.now(UTC).date()
 
 
+def get_now() -> datetime:
+    return datetime.now(UTC)
+
+
 Warehouse = Annotated[TenantWarehouse, Depends(get_tenant_warehouse)]
 Today = Annotated[date, Depends(get_today)]
+Now = Annotated[datetime, Depends(get_now)]

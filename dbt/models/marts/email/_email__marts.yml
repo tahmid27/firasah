@@ -144,3 +144,22 @@ models:
         description: First day of the month.
         tests:
           - not_null
+
+  - name: fct_mailchimp_campaign_hourly
+    description: Opens and clicks per hour for the 24 hours after each campaign send. Use for best-send-time charts.
+    columns:
+      - name: org_id
+        description: Firasah tenant (charity) the row belongs to, stamped at ingestion.
+        tests:
+          - not_null
+
+      - name: campaign_hour_id
+        description: Campaign ID plus hours after send.
+        tests:
+          - not_null
+          - unique_per_org
+
+      - name: hours_after_send
+        description: Whole hours between the send and this hour (0 = the hour of sending).
+        tests:
+          - not_null

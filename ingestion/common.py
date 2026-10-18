@@ -131,7 +131,12 @@ def tag_rows(rows: list[dict], org_id: str, tags: dict, ingested_at: str) -> lis
 
 @task(retries=2, retry_delay_seconds=10)
 def load_raw_to_bigquery(
-    rows: list[dict], table_id: str, tags: dict, *, org_id: str
+    rows: list[dict],
+    table_id: str,
+    tags: dict,
+    *,
+    org_id: str,
+    schema: list[bigquery.SchemaField] | None = None,
 ) -> None:
     """Appends rows to a raw landing table, tagging each with the tenant
     (`_org_id`, required), _ingested_at, plus whatever
@@ -164,7 +169,10 @@ def load_raw_to_bigquery(
     job_config = bigquery.LoadJobConfig(
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
         write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-        autodetect=True,
+        # Explicit schema for tables Firasah defines itself; autodetect for
+        # source data, whose shape we don't control
+        autodetect=schema is None,
+        schema=schema,
         # The raw layer mirrors whatever the source sends, so a source
         # adding a field (or us requesting extra metrics) must extend the
         # existing table rather than fail the load on a schema mismatch.

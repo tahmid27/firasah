@@ -71,3 +71,21 @@ def test_every_raw_load_in_the_codebase_passes_org_id():
                 missing.append(f"{path}:{node.lineno}")
 
     assert missing == [], f"load_raw_to_bigquery calls without org_id: {missing}"
+
+
+def test_refresh_failures_never_log_the_error_message():
+    import httpx
+
+    from ingestion.refresh import describe_error
+
+    request = httpx.Request("GET", "https://graph.example/me?access_token=SECRET-TOKEN")
+    error = httpx.HTTPStatusError(
+        "Client error '400' for url https://graph.example/me?access_token=SECRET-TOKEN",
+        request=request,
+        response=httpx.Response(400, request=request),
+    )
+
+    logged = describe_error(error)
+
+    assert logged == {"error_type": "HTTPStatusError", "http_status": 400}
+    assert "SECRET" not in str(logged)

@@ -201,29 +201,59 @@ def check_api(member: str, no_org: str, temp: str, temp_user_id: str) -> None:
     r = me(member, params={"org_id": TEMP_ORG}, headers={"X-Org-Id": TEMP_ORG})
     check("API: smuggled org_id is ignored", r.json().get("org_id") == "test_charity")
 
-    for path in (
-        "/fundraising/summary",
-        "/fundraising/income-over-time",
-        "/fundraising/fundraisers",
-        "/social/followers-over-time",
-        "/email/campaigns",
-    ):
-        ok = api.get(path, headers={"Authorization": f"Bearer {member}"})
+    as_member = {"Authorization": f"Bearer {member}"}
+    as_temp = {"Authorization": f"Bearer {temp}"}
+    campaigns = api.get("/email/campaigns", headers=as_member).json()["rows"]
+    campaign_id = campaigns[0]["campaign_id"] if campaigns else "none"
+
+    for path in protected_get_paths():
+        if path == "/me":
+            continue
+        url = path.replace("{campaign_id}", campaign_id)
+        ok = api.get(url, headers=as_member)
         check(
             f"API: {path} serves the member's data",
             ok.status_code == 200,
             ok.status_code,
         )
-        empty = api.get(path, headers={"Authorization": f"Bearer {temp}"}).json()
-        if "this_month" in empty:
-            nothing = (
-                empty["this_month"]["donations"]
-                == 0
-                == empty["last_month"]["donations"]
+        other = api.get(url, headers=as_temp)
+        if "{" in path:
+            check(
+                f"API: {path} with the member's ID is 404 for the other org",
+                other.status_code == 404,
+                other.status_code,
             )
         else:
-            nothing = empty.get("rows", empty.get("series")) == []
-        check(f"API: {path} gives the other org none of it", nothing, str(empty)[:120])
+            check(
+                f"API: {path} gives the other org none of it",
+                other.status_code == 200 and holds_no_data(other.json()),
+                str(other.json())[:120],
+            )
+
+
+# Numbers that describe the shape of a response rather than anyone's data
+STRUCTURAL = {"hour", "day_of_week", "min_amount", "max_amount", "baseline_days"}
+
+
+def holds_no_data(value, key=None) -> bool:
+    if isinstance(value, dict):
+        return all(holds_no_data(v, k) for k, v in value.items())
+    if isinstance(value, list):
+        return all(holds_no_data(v, key) for v in value)
+    if isinstance(value, bool) or key in STRUCTURAL:
+        return True
+    if isinstance(value, int | float):
+        return value == 0
+    return True
+
+
+def protected_get_paths() -> list[str]:
+    public = {"/health", "/auth/tiktok/callback"}
+    return sorted(
+        path
+        for path, operations in main.app.openapi()["paths"].items()
+        if "get" in operations and path not in public
+    )
 
 
 def cleanup(temp_user_id: str | None) -> None:
