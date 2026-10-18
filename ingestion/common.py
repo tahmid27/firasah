@@ -8,6 +8,8 @@ live here so each connector only has to implement what's actually different
 about it.
 """
 
+import gzip
+import io
 import json
 import os
 import time
@@ -200,7 +202,12 @@ def load_raw_to_bigquery(
         # existing table rather than fail the load on a schema mismatch.
         schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION],
     )
-    job = client.load_table_from_json(tagged_rows, table_id, job_config=job_config)
+    # Sent gzip-compressed: raw API JSON shrinks several-fold, which matters
+    # on slow connections; BigQuery decompresses it on arrival
+    payload = gzip.compress("\n".join(json.dumps(row) for row in tagged_rows).encode())
+    job = client.load_table_from_file(
+        io.BytesIO(payload), table_id, job_config=job_config
+    )
     job.result()  # wait for the load job to finish, raises on failure
     print(f"Loaded {len(tagged_rows)} rows into {table_id}")
 

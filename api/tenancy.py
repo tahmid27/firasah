@@ -18,11 +18,12 @@ class OrgContext:
     user_id: str
     org_id: str
     role: str
+    org_name: str | None = None
 
 
 class MembershipLookup(Protocol):
-    def __call__(self, user: CurrentUser) -> tuple[str, str] | None:
-        """(org_id, role) for this user, or None if they belong to none."""
+    def __call__(self, user: CurrentUser) -> tuple[str, str, str | None] | None:
+        """(org_id, role, organisation name) for this user, or None if they belong to none."""
 
 
 class SupabaseMembershipLookup:
@@ -33,10 +34,13 @@ class SupabaseMembershipLookup:
         self._settings = settings
         self._client = client or httpx.Client(timeout=10)
 
-    def __call__(self, user: CurrentUser) -> tuple[str, str] | None:
+    def __call__(self, user: CurrentUser) -> tuple[str, str, str | None] | None:
         response = self._client.get(
             f"{self._settings.supabase_url}/rest/v1/memberships",
-            params={"select": "org_id,role", "user_id": f"eq.{user.user_id}"},
+            params={
+                "select": "org_id,role,organisations(name)",
+                "user_id": f"eq.{user.user_id}",
+            },
             headers={
                 "apikey": self._settings.supabase_anon_key,
                 "Authorization": f"Bearer {user.token}",
@@ -49,7 +53,8 @@ class SupabaseMembershipLookup:
         if len(rows) > 1:
             # memberships.user_id is the primary key, so this shouldn't happen
             raise RuntimeError("user has more than one membership")
-        return rows[0]["org_id"], rows[0]["role"]
+        organisation = rows[0].get("organisations") or {}
+        return rows[0]["org_id"], rows[0]["role"], organisation.get("name")
 
 
 _lookups: dict[str, SupabaseMembershipLookup] = {}
@@ -82,8 +87,13 @@ def get_org_context(
             detail="no organisation for this user",
         )
 
-    org_id, role = membership
-    return OrgContext(user_id=user.user_id, org_id=validate_org_id(org_id), role=role)
+    org_id, role, org_name = membership
+    return OrgContext(
+        user_id=user.user_id,
+        org_id=validate_org_id(org_id),
+        role=role,
+        org_name=org_name,
+    )
 
 
 # Endpoints declare `ctx: CurrentOrg`
