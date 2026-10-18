@@ -9,6 +9,7 @@ from pydantic import BaseModel
 class MeResponse(BaseModel):
     user_id: str
     org_id: str
+    org_name: str | None
     role: str
 
 

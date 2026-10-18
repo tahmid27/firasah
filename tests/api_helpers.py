@@ -31,8 +31,8 @@ USER_B = str(uuid.uuid4())  # member of charity_b
 USER_NO_ORG = str(uuid.uuid4())  # logged in, but in no charity
 
 MEMBERSHIPS = {
-    USER_A: ("charity_a", "admin"),
-    USER_B: ("charity_b", "member"),
+    USER_A: ("charity_a", "admin", "Charity A"),
+    USER_B: ("charity_b", "member", "Charity B"),
 }
 
 

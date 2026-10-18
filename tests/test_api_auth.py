@@ -49,6 +49,7 @@ def test_valid_token_resolves_the_users_own_charity(client):
     assert response.json() == {
         "user_id": USER_A,
         "org_id": "charity_a",
+        "org_name": "Charity A",
         "role": "admin",
     }
 
@@ -157,11 +158,21 @@ def lookup_returning(status, rows, seen):
 
 def test_supabase_lookup_asks_as_the_user_not_as_the_service_role():
     seen = []
-    lookup = lookup_returning(200, [{"org_id": "charity_a", "role": "admin"}], seen)
+    lookup = lookup_returning(
+        200,
+        [
+            {
+                "org_id": "charity_a",
+                "role": "admin",
+                "organisations": {"name": "Charity A"},
+            }
+        ],
+        seen,
+    )
 
     result = lookup(CurrentUser(user_id=USER_A, token="users-own-jwt"))
 
-    assert result == ("charity_a", "admin")
+    assert result == ("charity_a", "admin", "Charity A")
     request = seen[0]
     assert request.headers["authorization"] == "Bearer users-own-jwt"
     assert request.headers["apikey"] == SETTINGS.supabase_anon_key

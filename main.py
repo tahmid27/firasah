@@ -20,7 +20,9 @@ def health():
 @app.get("/me", response_model=MeResponse)
 def me(ctx: CurrentOrg):
     """The caller's user ID, organisation and role."""
-    return MeResponse(user_id=ctx.user_id, org_id=ctx.org_id, role=ctx.role)
+    return MeResponse(
+        user_id=ctx.user_id, org_id=ctx.org_id, org_name=ctx.org_name, role=ctx.role
+    )
 
 
 @app.get("/auth/tiktok/callback")
