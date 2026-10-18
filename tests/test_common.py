@@ -176,3 +176,94 @@ def test_gives_up_after_max_retries(sleeps):
         request_with_retries(client, "GET", "https://api.test/x")
 
     assert len(client.seen) == MAX_RETRIES
+
+
+# --- needs_autodetect --------------------------------------------------------
+
+
+def _schema():
+    from google.cloud import bigquery
+
+    return [
+        bigquery.SchemaField("id", "STRING"),
+        bigquery.SchemaField(
+            "opens", "RECORD", fields=[bigquery.SchemaField("open_rate", "FLOAT")]
+        ),
+        bigquery.SchemaField(
+            "timeseries",
+            "RECORD",
+            mode="REPEATED",
+            fields=[bigquery.SchemaField("unique_opens", "INTEGER")],
+        ),
+    ]
+
+
+def test_a_new_table_infers_types():
+    from ingestion.common import needs_autodetect
+
+    assert needs_autodetect(None, [{"id": "1"}]) is True
+
+
+def test_known_fields_keep_the_tables_types_even_if_they_look_numeric():
+    from ingestion.common import needs_autodetect
+
+    rows = [
+        {
+            "id": "4523190765",
+            "opens": {"open_rate": 0.4},
+            "timeseries": [{"unique_opens": 3}],
+        }
+    ]
+    assert needs_autodetect(_schema(), rows) is False
+
+
+def test_a_new_field_anywhere_triggers_inference():
+    from ingestion.common import needs_autodetect
+
+    assert needs_autodetect(_schema(), [{"id": "x", "new_field": 1}]) is True
+    assert needs_autodetect(_schema(), [{"id": "x", "opens": {"new_rate": 1}}]) is True
+    assert (
+        needs_autodetect(_schema(), [{"id": "x", "timeseries": [{"new": 1}]}]) is True
+    )
+
+
+def test_load_falls_back_to_inference_when_strict_parsing_refuses(monkeypatch):
+    from types import SimpleNamespace
+
+    from google.api_core.exceptions import BadRequest
+    from google.cloud import bigquery
+
+    from ingestion import common
+
+    attempts = []
+
+    class FakeJob:
+        def __init__(self, fail):
+            self.fail = fail
+
+        def result(self):
+            if self.fail:
+                raise BadRequest(
+                    "Could not parse '2023-10-18T11:42:16+0000' as a timestamp"
+                )
+
+    class FakeClient:
+        def get_table(self, table_id):
+            return SimpleNamespace(
+                schema=[
+                    bigquery.SchemaField("timestamp", "TIMESTAMP"),
+                    bigquery.SchemaField("_org_id", "STRING"),
+                    bigquery.SchemaField("_ingested_at", "TIMESTAMP"),
+                ]
+            )
+
+        def load_table_from_file(self, payload, table_id, job_config):
+            attempts.append(job_config.autodetect)
+            return FakeJob(fail=len(attempts) == 1)
+
+    monkeypatch.setattr(common.bigquery, "Client", FakeClient)
+    common.load_raw_to_bigquery.fn(
+        [{"timestamp": "2023-10-18T11:42:16+0000"}], "p.d.t", {}, org_id="test_charity"
+    )
+
+    assert attempts == [False, True]

@@ -47,9 +47,9 @@ def reset_dataset(client: bigquery.Client, dataset: str) -> None:
     print(f"[synthetic] {ref} is empty")
 
 
-def dbt(command: str) -> None:
+def dbt(command: str, *extra: str) -> None:
     result = subprocess.run(
-        [*DBT, command, *DBT_ARGS], check=False, capture_output=True, text=True
+        [*DBT, command, *extra, *DBT_ARGS], check=False, capture_output=True, text=True
     )
     summary = [
         line
@@ -129,6 +129,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--skip-supabase", action="store_true")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="the first pull is already loaded: continue from the first snapshot",
+    )
     args = parser.parse_args()
 
     end = datetime.now(UTC).date() - timedelta(days=1)
@@ -139,12 +144,17 @@ def main() -> int:
         )
 
     client = bigquery.Client()
-    reset_dataset(client, DATASET)
+    if not args.resume:
+        reset_dataset(client, DATASET)
     for phase in (1, 2):
-        for g in generated:
-            for batch in g.batches:
-                if batch.phase == phase:
-                    load(batch, g.charity.org_id)
+        if phase == 2 or not args.resume:
+            for g in generated:
+                for batch in g.batches:
+                    if batch.phase == phase:
+                        load(batch, g.charity.org_id)
+        if phase == 1:
+            # A fresh dataset has no staging views yet, and the snapshot reads one
+            dbt("run", "--select", "staging")
         dbt("snapshot")
     dbt("run")
     dbt("test")
