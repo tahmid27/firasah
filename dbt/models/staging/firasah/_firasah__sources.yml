@@ -3,8 +3,8 @@ version: 2
 sources:
   - name: firasah
     description: Tables Firasah writes about its own operation (not from a data platform).
-    database: firasah-dev-511916
-    schema: firasah_dev
+    database: "{{ target.database }}"
+    schema: "{{ target.schema }}"
     tables:
       - name: raw_refresh_runs
         description: One row per source per refresh-flow run, with its outcome. Error messages are never stored, only the error type and HTTP status.
