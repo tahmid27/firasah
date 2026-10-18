@@ -18,6 +18,7 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 import httpx
+from google.api_core.exceptions import BadRequest, NotFound
 from google.cloud import bigquery
 from prefect import task
 
@@ -139,6 +140,40 @@ def tag_rows(rows: list[dict], org_id: str, tags: dict, ingested_at: str) -> lis
     ]
 
 
+def _field_paths(fields, prefix: str = "") -> set[str]:
+    paths = set()
+    for f in fields:
+        paths.add(prefix + f.name)
+        paths |= _field_paths(f.fields, prefix + f.name + ".")
+    return paths
+
+
+def _row_paths(value, prefix: str = "") -> set[str]:
+    paths = set()
+    if isinstance(value, dict):
+        for key, child in value.items():
+            paths.add(prefix + key)
+            paths |= _row_paths(child, prefix + key + ".")
+    elif isinstance(value, list):
+        for item in value:
+            paths |= _row_paths(item, prefix)
+    return paths
+
+
+def needs_autodetect(
+    existing: list[bigquery.SchemaField] | None, rows: list[dict]
+) -> bool:
+    """Whether a load must infer types. Only for a brand-new table, or when the
+    source sends a field the table doesn't have yet. Otherwise the table's
+    existing types are kept: re-inferring them from each batch is how an
+    all-digit ID string like "4523190765" gets typed INTEGER and clashes with
+    the STRING column an earlier batch created."""
+    if existing is None:
+        return True
+    known = _field_paths(existing)
+    return any(path not in known for row in rows for path in _row_paths(row))
+
+
 @task(retries=2, retry_delay_seconds=10)
 def load_raw_to_bigquery(
     rows: list[dict],
@@ -153,10 +188,10 @@ def load_raw_to_bigquery(
     """Appends rows to a raw landing table, tagging each with the tenant
     (`_org_id`, required), _ingested_at, plus whatever
     source-specific identifiers the caller passes in `tags` (e.g. which
-    fundraising page or account they came from). Schema is
-    auto-detected from the JSON — the raw layer keeps field names/types
-    exactly as the source API sent them; renaming/casting happens later in
-    the dbt staging model.
+    fundraising page or account they came from). Types are inferred on a
+    table's first load (see needs_autodetect) — the raw layer keeps field
+    names exactly as the source API sent them; renaming/casting happens
+    later in the dbt staging model.
 
     Retries here are Prefect's own (transient BigQuery/network failures) —
     separate from the source-specific rate-limit/backoff handling in
@@ -190,25 +225,40 @@ def load_raw_to_bigquery(
         tagged_rows = tag_rows(rows, org_id, tags, arrived)
 
     client = bigquery.Client()
-    job_config = bigquery.LoadJobConfig(
-        source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
-        write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-        # Explicit schema for tables Firasah defines itself; autodetect for
-        # source data, whose shape we don't control
-        autodetect=schema is None,
-        schema=schema,
-        # The raw layer mirrors whatever the source sends, so a source
-        # adding a field (or us requesting extra metrics) must extend the
-        # existing table rather than fail the load on a schema mismatch.
-        schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION],
-    )
+    try:
+        existing = client.get_table(table_id).schema
+    except NotFound:
+        existing = None
     # Sent gzip-compressed: raw API JSON shrinks several-fold, which matters
     # on slow connections; BigQuery decompresses it on arrival
     payload = gzip.compress("\n".join(json.dumps(row) for row in tagged_rows).encode())
-    job = client.load_table_from_file(
-        io.BytesIO(payload), table_id, job_config=job_config
-    )
-    job.result()  # wait for the load job to finish, raises on failure
+
+    def run(autodetect: bool) -> None:
+        job_config = bigquery.LoadJobConfig(
+            source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+            write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+            autodetect=autodetect,
+            schema=schema,
+            # The raw layer mirrors whatever the source sends, so a source
+            # adding a field must extend the table, not fail the load
+            schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION],
+        )
+        client.load_table_from_file(
+            io.BytesIO(payload), table_id, job_config=job_config
+        ).result()
+
+    # Explicit schema for tables Firasah defines itself. For source data,
+    # keep the table's existing types when nothing new arrived (see
+    # needs_autodetect). That mode parses values strictly, and rejects some
+    # formats type inference accepts (Instagram's "+0000" timestamp offsets),
+    # so a refusal falls back to inference. A failed load writes nothing.
+    autodetect = schema is None and needs_autodetect(existing, tagged_rows)
+    try:
+        run(autodetect)
+    except BadRequest:
+        if autodetect or schema is not None:
+            raise
+        run(True)
     print(f"Loaded {len(tagged_rows)} rows into {table_id}")
 
 
