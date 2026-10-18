@@ -21,7 +21,7 @@ import httpx
 from google.cloud import bigquery
 from prefect import flow, task
 
-from ingestion.common import load_raw_to_bigquery
+from ingestion.common import load_raw_to_bigquery, raw_table_id
 from ingestion.instagram_posts import instagram_posts_flow
 from ingestion.justgiving_donations import justgiving_donations_flow
 from ingestion.launchgood_donations import launchgood_donations_flow
@@ -31,7 +31,7 @@ from ingestion.tiktok_videos import tiktok_videos_flow
 LAUNCHGOOD_EXPORT_PATH = "data/raw/launchgood_export.csv"
 LAUNCHGOOD_STATE_PATH = Path("data/state/launchgood_last_loaded.sha256")
 
-RAW_REFRESH_RUNS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_refresh_runs"
+RAW_REFRESH_RUNS_TABLE_ID = raw_table_id("raw_refresh_runs")
 REFRESH_RUNS_SCHEMA = [
     bigquery.SchemaField("source", "STRING"),
     bigquery.SchemaField("status", "STRING"),

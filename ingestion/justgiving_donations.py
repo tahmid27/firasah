@@ -20,6 +20,7 @@ from prefect import flow, task
 from ingestion.common import (
     coerce_to_float,
     load_raw_to_bigquery,
+    raw_table_id,
     request_with_retries,
     save_raw_json,
 )
@@ -45,8 +46,26 @@ PAGE_FLOAT_FIELDS = [
     "totalEstimatedGiftAid",
 ]
 
-RAW_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_justgiving_donations"
-RAW_PAGES_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_justgiving_pages"
+RAW_TABLE_ID = raw_table_id("raw_justgiving_donations")
+RAW_PAGES_TABLE_ID = raw_table_id("raw_justgiving_pages")
+
+
+def shape_donation(record: dict) -> dict:
+    """A donations-API record as it lands in the raw table."""
+    return coerce_to_float(record, DONATION_FLOAT_FIELDS)
+
+
+def shape_page_details(body: dict) -> dict:
+    """A page-details response as it lands in the raw table: scalar fields
+    plus the charity's id and name."""
+    page = {
+        key: value
+        for key, value in body.items()
+        if value is not None and not isinstance(value, (dict, list))
+    }
+    charity = body.get("charity") or {}
+    page["charity"] = {"id": charity.get("id"), "name": charity.get("name")}
+    return coerce_to_float(page, PAGE_FLOAT_FIELDS)
 
 
 @task
@@ -66,9 +85,7 @@ def fetch_donations(page_short_name: str) -> list[dict]:
                 params={"pageNumber": page_number, "pageSize": PAGE_SIZE},
             )
             body = response.json()
-            donations.extend(
-                coerce_to_float(d, DONATION_FLOAT_FIELDS) for d in body["donations"]
-            )
+            donations.extend(shape_donation(d) for d in body["donations"])
 
             total_pages = body["pagination"]["totalPages"]
             print(
@@ -100,16 +117,7 @@ def fetch_page_details(page_short_name: str) -> dict:
         response = request_with_retries(
             client, "GET", f"{BASE_URL}/v1/fundraising/pages/{page_short_name}"
         )
-    body = response.json()
-
-    page = {
-        key: value
-        for key, value in body.items()
-        if value is not None and not isinstance(value, (dict, list))
-    }
-    charity = body.get("charity") or {}
-    page["charity"] = {"id": charity.get("id"), "name": charity.get("name")}
-    return coerce_to_float(page, PAGE_FLOAT_FIELDS)
+    return shape_page_details(response.json())
 
 
 @task

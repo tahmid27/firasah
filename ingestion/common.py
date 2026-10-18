@@ -9,6 +9,7 @@ about it.
 """
 
 import json
+import os
 import time
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -120,6 +121,13 @@ def save_raw_json(data: list[dict], path: str | Path) -> None:
     print(f"Saved to {path}")
 
 
+def raw_table_id(name: str, dataset: str | None = None) -> str:
+    """Fully qualified raw table ID. Project from GOOGLE_CLOUD_PROJECT; dataset
+    from RAW_DATASET (default firasah_dev) unless given."""
+    dataset = dataset or os.environ.get("RAW_DATASET", "firasah_dev")
+    return f"{os.environ['GOOGLE_CLOUD_PROJECT']}.{dataset}.{name}"
+
+
 def tag_rows(rows: list[dict], org_id: str, tags: dict, ingested_at: str) -> list[dict]:
     """Adds source tags, then _org_id and _ingested_at (last, so neither can
     be overwritten)."""
@@ -137,6 +145,7 @@ def load_raw_to_bigquery(
     *,
     org_id: str,
     schema: list[bigquery.SchemaField] | None = None,
+    ingested_at: datetime | None = None,
 ) -> None:
     """Appends rows to a raw landing table, tagging each with the tenant
     (`_org_id`, required), _ingested_at, plus whatever
@@ -163,7 +172,10 @@ def load_raw_to_bigquery(
         print(f"WARNING: 0 rows to load into {table_id}; skipping load")
         return
 
-    tagged_rows = tag_rows(rows, org_id, tags, datetime.now(UTC).isoformat())
+    # ingested_at is only set for backfills (synthetic history); real loads
+    # are stamped with the time they actually arrive
+    arrived = (ingested_at or datetime.now(UTC)).isoformat()
+    tagged_rows = tag_rows(rows, org_id, tags, arrived)
 
     client = bigquery.Client()
     job_config = bigquery.LoadJobConfig(

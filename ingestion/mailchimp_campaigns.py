@@ -19,6 +19,7 @@ from prefect import flow, task
 from ingestion.common import (
     coerce_to_float,
     load_raw_to_bigquery,
+    raw_table_id,
     request_with_retries,
     save_raw_json,
 )
@@ -30,21 +31,11 @@ DATA_CENTER = API_KEY.split("-")[-1]
 BASE_URL = f"https://{DATA_CENTER}.api.mailchimp.com/3.0"
 PAGE_SIZE = 100
 
-RAW_CAMPAIGN_REPORTS_TABLE_ID = (
-    "firasah-dev-511916.firasah_dev.raw_mailchimp_campaign_reports"
-)
-RAW_AUDIENCE_STATS_TABLE_ID = (
-    "firasah-dev-511916.firasah_dev.raw_mailchimp_audience_stats"
-)
-RAW_LINK_CLICKS_TABLE_ID = (
-    "firasah-dev-511916.firasah_dev.raw_mailchimp_campaign_link_clicks"
-)
-RAW_LIST_ACTIVITY_TABLE_ID = (
-    "firasah-dev-511916.firasah_dev.raw_mailchimp_list_activity_daily"
-)
-RAW_LIST_GROWTH_TABLE_ID = (
-    "firasah-dev-511916.firasah_dev.raw_mailchimp_list_growth_monthly"
-)
+RAW_CAMPAIGN_REPORTS_TABLE_ID = raw_table_id("raw_mailchimp_campaign_reports")
+RAW_AUDIENCE_STATS_TABLE_ID = raw_table_id("raw_mailchimp_audience_stats")
+RAW_LINK_CLICKS_TABLE_ID = raw_table_id("raw_mailchimp_campaign_link_clicks")
+RAW_LIST_ACTIVITY_TABLE_ID = raw_table_id("raw_mailchimp_list_activity_daily")
+RAW_LIST_GROWTH_TABLE_ID = raw_table_id("raw_mailchimp_list_growth_monthly")
 
 
 # Fields that are fractional (rates) or money but can arrive as whole numbers
@@ -98,6 +89,32 @@ def _paginated_get(client: httpx.Client, path: str, items_key: str) -> list[dict
     return items
 
 
+def shape_report(report: dict) -> dict:
+    return coerce_to_float(report, REPORT_FLOAT_FIELDS)
+
+
+def shape_audience(audience: dict) -> dict:
+    return coerce_to_float(audience, AUDIENCE_FLOAT_FIELDS)
+
+
+def shape_link_clicks(rows: list[dict]) -> list[dict]:
+    # Ratios are fractions, but Mailchimp sends a whole-number 1 when a link
+    # got 100% of clicks; forcing float keeps the column FLOAT
+    rows = _strip_links(rows)
+    for row in rows:
+        for field in ("click_percentage", "unique_click_percentage"):
+            row[field] = float(row[field])
+    return rows
+
+
+def shape_activity(list_id: str, rows: list[dict]) -> list[dict]:
+    return [{"list_id": list_id, **row} for row in rows]
+
+
+def shape_growth(rows: list[dict]) -> list[dict]:
+    return _strip_links(rows)
+
+
 @task
 def fetch_campaign_reports() -> list[dict]:
     """Only campaigns that have actually sent have report data — drafts
@@ -113,7 +130,7 @@ def fetch_campaign_reports() -> list[dict]:
             response = request_with_retries(
                 client, "GET", f"{BASE_URL}/reports/{campaign['id']}"
             )
-            reports.append(coerce_to_float(response.json(), REPORT_FLOAT_FIELDS))
+            reports.append(shape_report(response.json()))
 
     return reports
 
@@ -122,7 +139,7 @@ def fetch_campaign_reports() -> list[dict]:
 def fetch_audience_stats() -> list[dict]:
     with httpx.Client(auth=("anystring", API_KEY), timeout=30) as client:
         audiences = _paginated_get(client, "/lists", "lists")
-    return [coerce_to_float(a, AUDIENCE_FLOAT_FIELDS) for a in audiences]
+    return [shape_audience(a) for a in audiences]
 
 
 def _strip_links(rows: list[dict]) -> list[dict]:
@@ -142,15 +159,7 @@ def fetch_link_clicks(campaign_ids: list[str]) -> list[dict]:
                     client, f"/reports/{campaign_id}/click-details", "urls_clicked"
                 )
             )
-    rows = _strip_links(rows)
-    # Ratios are fractions, but Mailchimp sends a whole-number 1 when a link
-    # got 100% of clicks — and schema autodetect would then type the whole
-    # column INTEGER, so the next fractional value (0.5) would fail the
-    # load. Forcing float keeps the column FLOAT whatever the first row is.
-    for row in rows:
-        for field in ("click_percentage", "unique_click_percentage"):
-            row[field] = float(row[field])
-    return rows
+    return shape_link_clicks(rows)
 
 
 @task
@@ -161,8 +170,12 @@ def fetch_list_activity(list_ids: list[str]) -> list[dict]:
     rows = []
     with httpx.Client(auth=("anystring", API_KEY), timeout=30) as client:
         for list_id in list_ids:
-            for row in _paginated_get(client, f"/lists/{list_id}/activity", "activity"):
-                rows.append({"list_id": list_id, **row})
+            rows.extend(
+                shape_activity(
+                    list_id,
+                    _paginated_get(client, f"/lists/{list_id}/activity", "activity"),
+                )
+            )
     return rows
 
 
@@ -175,7 +188,7 @@ def fetch_list_growth(list_ids: list[str]) -> list[dict]:
             rows.extend(
                 _paginated_get(client, f"/lists/{list_id}/growth-history", "history")
             )
-    return _strip_links(rows)
+    return shape_growth(rows)
 
 
 @flow(name="mailchimp-campaigns-ingestion")

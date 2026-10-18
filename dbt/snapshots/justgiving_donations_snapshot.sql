@@ -2,7 +2,7 @@
 
 {{
     config(
-        target_schema='firasah_dev',
+        target_schema=target.schema,
         unique_key='snapshot_key',
         strategy='check',
         check_cols=['amount', 'currency_code', 'traffic_source'],

@@ -21,6 +21,7 @@ from prefect import flow, task
 
 from ingestion.common import (
     load_raw_to_bigquery,
+    raw_table_id,
     request_with_retries,
     save_raw_json,
     update_env_file,
@@ -40,8 +41,8 @@ USER_FIELDS = (
     "open_id,display_name,follower_count,following_count,likes_count,video_count"
 )
 
-RAW_VIDEOS_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_tiktok_videos"
-RAW_USER_INFO_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_tiktok_user_info"
+RAW_VIDEOS_TABLE_ID = raw_table_id("raw_tiktok_videos")
+RAW_USER_INFO_TABLE_ID = raw_table_id("raw_tiktok_user_info")
 
 
 @task

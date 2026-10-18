@@ -9,5 +9,6 @@ for key in (
     "TIKTOK_CLIENT_KEY",
     "TIKTOK_CLIENT_SECRET",
     "TIKTOK_REFRESH_TOKEN",
+    "GOOGLE_CLOUD_PROJECT",
 ):
     os.environ.setdefault(key, "test-dummy-value-us1")

@@ -13,7 +13,7 @@ landing step are shared — see ingestion/common.py.
 
 import os
 import sys
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 from dotenv import load_dotenv
@@ -22,6 +22,7 @@ from prefect import flow, task
 from ingestion.common import (
     coerce_to_float,
     load_raw_to_bigquery,
+    raw_table_id,
     request_with_retries,
     save_raw_json,
 )
@@ -31,18 +32,12 @@ load_dotenv()
 ACCESS_TOKEN = os.environ["INSTAGRAM_ACCESS_TOKEN"]
 BASE_URL = "https://graph.facebook.com/v26.0"
 
-RAW_MEDIA_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_instagram_media"
-RAW_ACCOUNT_INFO_TABLE_ID = "firasah-dev-511916.firasah_dev.raw_instagram_account_info"
-RAW_MEDIA_INSIGHTS_TABLE_ID = (
-    "firasah-dev-511916.firasah_dev.raw_instagram_media_insights"
-)
+RAW_MEDIA_TABLE_ID = raw_table_id("raw_instagram_media")
+RAW_ACCOUNT_INFO_TABLE_ID = raw_table_id("raw_instagram_account_info")
+RAW_MEDIA_INSIGHTS_TABLE_ID = raw_table_id("raw_instagram_media_insights")
 
-RAW_ACCOUNT_INSIGHTS_TABLE_ID = (
-    "firasah-dev-511916.firasah_dev.raw_instagram_account_insights_daily"
-)
-RAW_FOLLOWER_DEMOGRAPHICS_TABLE_ID = (
-    "firasah-dev-511916.firasah_dev.raw_instagram_follower_demographics"
-)
+RAW_ACCOUNT_INSIGHTS_TABLE_ID = raw_table_id("raw_instagram_account_insights_daily")
+RAW_FOLLOWER_DEMOGRAPHICS_TABLE_ID = raw_table_id("raw_instagram_follower_demographics")
 
 # Per-post metrics only available from the separate insights endpoint (the
 # basic /media fields above don't include them). Needs the
@@ -114,6 +109,37 @@ def fetch_media(ig_user_id: str) -> list[dict]:
     return media
 
 
+def shape_media_insights(media_id: str, payload: dict) -> dict:
+    """A media-insights response as one raw row."""
+    row = {"media_id": media_id}
+    for metric in payload["data"]:
+        row[metric["name"]] = metric["values"][0]["value"]
+    # A percentage that can arrive as a whole number (e.g. 5)
+    return coerce_to_float(row, ["reels_skip_rate"])
+
+
+def shape_account_day(day: date, payload: dict) -> dict:
+    """An account-insights (total_value) response for one day as one raw row."""
+    row = {"date": day.isoformat()}
+    for metric in payload["data"]:
+        row[metric["name"]] = metric["total_value"]["value"]
+    return row
+
+
+def shape_demographics(breakdown: str, payload: dict) -> list[dict]:
+    """A follower_demographics response as one raw row per bucket."""
+    return [
+        {
+            "breakdown": breakdown,
+            "bucket": result["dimension_values"][0],
+            "followers": result["value"],
+        }
+        for data in payload["data"]
+        for block in data["total_value"].get("breakdowns", [])
+        for result in block["results"]
+    ]
+
+
 @task
 def fetch_media_insights(media: list[dict]) -> list[dict]:
     """One insights call per post (the endpoint has no bulk form).
@@ -159,12 +185,7 @@ def fetch_media_insights(media: list[dict]) -> list[dict]:
                 print(f"No insights for media {media_id}: {last_error}")
                 continue
 
-            row = {"media_id": media_id}
-            for metric in response.json()["data"]:
-                row[metric["name"]] = metric["values"][0]["value"]
-            # A percentage that can arrive as a whole number (e.g. 5); see
-            # coerce_to_float for why it must stay a float.
-            insights.append(coerce_to_float(row, ["reels_skip_rate"]))
+            insights.append(shape_media_insights(media_id, response.json()))
 
     print(f"Fetched insights for {len(insights)} posts ({skipped} skipped)")
     return insights
@@ -198,10 +219,7 @@ def fetch_account_insights_daily(ig_user_id: str, days: int) -> list[dict]:
                     "access_token": ACCESS_TOKEN,
                 },
             )
-            row = {"date": day.date().isoformat()}
-            for metric in response.json()["data"]:
-                row[metric["name"]] = metric["total_value"]["value"]
-            rows.append(row)
+            rows.append(shape_account_day(day.date(), response.json()))
 
     print(f"Fetched account insights for {len(rows)} days")
     return rows
@@ -239,16 +257,7 @@ def fetch_follower_demographics(ig_user_id: str) -> list[dict]:
                 )
                 continue
 
-            for data in response.json()["data"]:
-                for breakdown_block in data["total_value"].get("breakdowns", []):
-                    for result in breakdown_block["results"]:
-                        rows.append(
-                            {
-                                "breakdown": breakdown,
-                                "bucket": result["dimension_values"][0],
-                                "followers": result["value"],
-                            }
-                        )
+            rows.extend(shape_demographics(breakdown, response.json()))
 
     print(f"Fetched {len(rows)} follower demographic buckets")
     return rows

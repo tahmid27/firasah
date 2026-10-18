@@ -3,8 +3,8 @@ version: 2
 sources:
   - name: mailchimp
     description: Raw Mailchimp data landed by the Python ingestion script (ingestion/mailchimp_campaigns.py) via the Mailchimp Marketing API. Not loaded through dbt.
-    database: firasah-dev-511916
-    schema: firasah_dev
+    database: "{{ target.database }}"
+    schema: "{{ target.schema }}"
     tables:
       - name: raw_mailchimp_campaign_reports
         description: >
