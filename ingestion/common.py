@@ -146,6 +146,7 @@ def load_raw_to_bigquery(
     org_id: str,
     schema: list[bigquery.SchemaField] | None = None,
     ingested_at: datetime | None = None,
+    row_ingested_at: list[datetime] | None = None,
 ) -> None:
     """Appends rows to a raw landing table, tagging each with the tenant
     (`_org_id`, required), _ingested_at, plus whatever
@@ -174,8 +175,17 @@ def load_raw_to_bigquery(
 
     # ingested_at is only set for backfills (synthetic history); real loads
     # are stamped with the time they actually arrive
-    arrived = (ingested_at or datetime.now(UTC)).isoformat()
-    tagged_rows = tag_rows(rows, org_id, tags, arrived)
+    if row_ingested_at is not None:
+        # Backfills of history tables: each row dated to the pull it represents
+        if len(row_ingested_at) != len(rows):
+            raise ValueError("row_ingested_at must have one timestamp per row")
+        tagged_rows = [
+            tag_rows([row], org_id, tags, at.isoformat())[0]
+            for row, at in zip(rows, row_ingested_at, strict=True)
+        ]
+    else:
+        arrived = (ingested_at or datetime.now(UTC)).isoformat()
+        tagged_rows = tag_rows(rows, org_id, tags, arrived)
 
     client = bigquery.Client()
     job_config = bigquery.LoadJobConfig(
