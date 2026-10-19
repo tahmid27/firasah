@@ -503,7 +503,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Timeline */
+        /**
+         * Timeline
+         * @description Donations per day (or week) with every post and email as an event.
+         */
         get: operations["timeline_appeals_timeline_get"];
         put?: never;
         post?: never;
@@ -544,7 +547,8 @@ export interface paths {
          * Email Lift
          * @description Donations on the day of each email and the day after, against a typical
          *     two days in the weeks before it. A pattern to look at, not proof the
-         *     email caused the donations.
+         *     email caused the donations. Newest campaigns first; only those sent in the
+         *     range when one is given.
          */
         get: operations["email_lift_appeals_email_lift_get"];
         put?: never;
@@ -2048,6 +2052,7 @@ export interface operations {
             query?: {
                 start?: string | null;
                 end?: string | null;
+                interval?: "day" | "week";
             };
             header?: never;
             path?: never;
@@ -2112,6 +2117,8 @@ export interface operations {
             query?: {
                 baseline_days?: number;
                 limit?: number;
+                start?: string | null;
+                end?: string | null;
             };
             header?: never;
             path?: never;

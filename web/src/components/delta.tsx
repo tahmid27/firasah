@@ -3,8 +3,17 @@ import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { percent } from "@/lib/format";
 
 // A change shown with an arrow and words as well as colour, so it never
-// relies on colour alone.
-export function Delta({ pct, label }: { pct: number | null; label: string }) {
+// relies on colour alone. The arrow shows which way the number moved; the
+// colour shows whether that's good (lowerIsBetter flips it, e.g. unsubscribes).
+export function Delta({
+  pct,
+  label,
+  lowerIsBetter = false,
+}: {
+  pct: number | null;
+  label: string;
+  lowerIsBetter?: boolean;
+}) {
   if (pct === null) {
     return <p className="text-xs text-muted">No comparison yet · {label}</p>;
   }
@@ -16,7 +25,11 @@ export function Delta({ pct, label }: { pct: number | null; label: string }) {
     <p className="flex flex-wrap items-center gap-x-1 text-xs text-muted">
       <span
         className={`inline-flex items-center font-medium ${
-          flat ? "text-ink-2" : up ? "text-delta-up" : "text-delta-down"
+          flat
+            ? "text-ink-2"
+            : up !== lowerIsBetter
+              ? "text-delta-up"
+              : "text-delta-down"
         }`}
       >
         <Icon size={14} aria-hidden />

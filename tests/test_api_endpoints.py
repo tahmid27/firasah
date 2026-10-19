@@ -462,6 +462,8 @@ def test_campaign_scorecard(client):
         ("/fundraising/projects", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/social/posts", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/email/campaigns", {"start": "2026-05-01", "end": "2026-04-01"}),
+        ("/appeals/email-lift", {"start": "2026-05-01", "end": "2026-04-01"}),
+        ("/appeals/timeline", {"interval": "month"}),
         ("/email/send-times", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/social/formats", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/social/best-time", {"start": "2026-05-01", "end": "2026-04-01"}),
@@ -1039,3 +1041,42 @@ def test_email_endpoints_take_a_date_range(client, executor, path):
             datetime(2026, 10, 1, tzinfo=UTC),
             datetime(2026, 10, 19, tzinfo=UTC),
         ]
+
+
+def test_appeals_timeline_by_week(client):
+    body = get(
+        client,
+        "/appeals/timeline",
+        interval="week",
+        start="2026-09-28",
+        end="2026-10-18",
+    )["donations"]
+
+    assert body["interval"] == "week"
+    assert [p["period"] for p in body["data"]] == [
+        "2026-09-28",
+        "2026-10-05",
+        "2026-10-12",
+    ]
+
+
+def test_appeals_timeline_takes_the_newest_posts_first(client, executor):
+    get(client, "/appeals/timeline")
+    posts = next(c for c in executor.calls if "fct_social_posts" in c["sql"])
+
+    assert "order by posted_at desc" in posts["sql"]
+
+
+def test_email_lift_takes_a_date_range(client, executor):
+    get(client, "/appeals/email-lift", start="2026-10-01", end="2026-10-18")
+    first = executor.calls[0]
+    values = [p.value for p in first["params"] if p.type_ == "TIMESTAMP"]
+
+    assert datetime(2026, 10, 1, tzinfo=UTC) in values
+    assert datetime(2026, 10, 19, tzinfo=UTC) in values
+
+
+def test_window_report_allows_multi_year_windows(client):
+    body = get(client, "/appeals/window-report", start="2023-10-20", end="2026-10-18")
+
+    assert body["current"]["start"] == "2023-10-20"

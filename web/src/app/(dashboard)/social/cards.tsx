@@ -423,6 +423,12 @@ export async function BestTimeCard({ searchParams }: Props) {
       subtitle={`When posts were published, UK time · ${range.label}`}
     >
       <Heatmap cells={result.cells} kind="posts" />
+      <p className="text-xs text-muted">
+        Slots with fewer than 3 posts are drawn hollow and left out of the
+        shading. An average of one or two posts says more about those posts than
+        about the time they went out, so it isn&apos;t enough to call a slot
+        good or bad.
+      </p>
       {posts < 50 && posts > 0 && (
         <p className="text-xs text-muted">
           Only {count(posts)} posts in this period, so single slots can mislead.

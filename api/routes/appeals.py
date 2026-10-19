@@ -2,13 +2,19 @@
 
 from collections import defaultdict
 from datetime import date, timedelta
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query
 
 from api.data import Today, Warehouse
 from api.periods import periods, start_of_day
-from api.routes.common import check_range, latest_total, money, pct_change
+from api.routes.common import (
+    check_range,
+    latest_total,
+    money,
+    optional_range,
+    pct_change,
+)
 from api.schemas import (
     AppealTimeline,
     EmailLift,
@@ -34,11 +40,13 @@ def _between(column: str, start: date, end: date) -> list[Filter]:
     ]
 
 
-def _daily_donations(wh: Warehouse, start: date, end: date) -> dict[date, dict]:
+def _daily_donations(
+    wh: Warehouse, start: date, end: date, interval: str = "day"
+) -> dict[date, dict]:
     rows = wh.fetch(
         "fct_donations",
         [
-            Bucket("donation_date", "day", "day"),
+            Bucket("donation_date", interval, "day"),
             Agg("sum", "amount", "raised"),
             Agg("count", "*", "donations"),
         ],
@@ -49,22 +57,30 @@ def _daily_donations(wh: Warehouse, start: date, end: date) -> dict[date, dict]:
 
 @router.get("/timeline", response_model=AppealTimeline)
 def timeline(
-    wh: Warehouse, today: Today, start: date | None = None, end: date | None = None
+    wh: Warehouse,
+    today: Today,
+    start: date | None = None,
+    end: date | None = None,
+    interval: Literal["day", "week"] = "day",
 ):
+    """Donations per day (or week) with every post and email as an event."""
     end = end or today
     start = start or end - timedelta(days=89)
-    check_range(start, end, "day")
-    daily = _daily_donations(wh, start, end)
+    check_range(start, end, interval)
+    daily = _daily_donations(wh, start, end, interval)
+    # Newest first, so if the cap is ever reached it's the oldest that drop
     posts = wh.fetch(
         "fct_social_posts",
         ["posted_at", "platform", "caption", "permalink"],
         filters=_between("posted_at", start, end),
+        order_by=[("posted_at", "desc")],
         limit=MAX_LIMIT,
     )
     emails = wh.fetch(
         "fct_mailchimp_campaigns",
         ["send_time", "campaign_title"],
         filters=_between("send_time", start, end),
+        order_by=[("send_time", "desc")],
         limit=MAX_LIMIT,
     )
     events = [
@@ -88,14 +104,14 @@ def timeline(
     ]
     return AppealTimeline(
         donations=TimeSeriesResponse(
-            interval="day",
+            interval=interval,
             start=start,
             end=end,
             unit="GBP",
             series=[SeriesInfo(key="raised", label="Raised")],
             data=[
                 {"period": d, "raised": money(daily.get(d, {}).get("raised"))}
-                for d in periods(start, end, "day")
+                for d in periods(start, end, interval)
             ],
         ),
         events=sorted(events, key=lambda e: e.at),
@@ -148,7 +164,7 @@ def window_report(
     """A chosen window (e.g. Ramadan) against the same-length window before it."""
     end = end or today
     start = start or end - timedelta(days=29)
-    check_range(start, end, "day")
+    check_range(start, end, "month")  # totals, not a daily series
     length = (end - start).days + 1
     current = _window(wh, start, end)
     previous = _window(wh, start - timedelta(days=length), start - timedelta(days=1))
@@ -165,14 +181,20 @@ def email_lift(
     wh: Warehouse,
     baseline_days: Annotated[int, Query(ge=7, le=180)] = 28,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    start: date | None = None,
+    end: date | None = None,
 ):
     """Donations on the day of each email and the day after, against a typical
     two days in the weeks before it. A pattern to look at, not proof the
-    email caused the donations."""
+    email caused the donations. Newest campaigns first; only those sent in the
+    range when one is given."""
     campaigns = wh.fetch(
         "fct_mailchimp_campaigns",
         ["campaign_id", "campaign_title", "send_time"],
-        filters=[Filter("send_time", ">=", start_of_day(date(2000, 1, 1)))],
+        filters=[
+            Filter("send_time", ">=", start_of_day(date(2000, 1, 1))),
+            *optional_range("send_time", start, end),
+        ],
         order_by=[("send_time", "desc")],
         limit=limit,
     )
