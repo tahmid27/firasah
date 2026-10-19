@@ -24,6 +24,7 @@ Practical implication: prioritize code and architecture that's **defensible and 
 Operational specifics worth knowing before running anything — these are easy to rediscover the hard way if this section goes stale:
 
 - **Python:** 3.12, managed via `uv`. Dependencies pinned in `pyproject.toml` + `uv.lock`. Core deps so far: `fastapi`, `dbt-core`, `dbt-bigquery`.
+- **Run the demo: `./demo.sh`** from the repo root (added 2026-10-19). It clears a stale `GOOGLE_APPLICATION_CREDENTIALS`, stops with instructions if the gcloud login has expired or a port is taken, installs `web/` packages on first run, starts the API (`BIGQUERY_DATASET=firasah_synthetic`, :8000) and the website (:3000) with `[api]`/`[web]`-labelled output, prints the demo logins, opens the browser (`NO_BROWSER=1` skips that), and stops both on Ctrl+C (`kill 0` on the script's process group). Tested: start-up, all three logins, a second copy refused, Ctrl+C leaves no processes behind.
 - **Checks before committing:** `uv run ruff check . && uv run ruff format --check . && uv run pytest` (CI runs these plus `dbt parse` on every push; see `.github/workflows/ci.yml`). `ruff format .` fixes formatting. Dev-only tools (`pytest`, `ruff`) are in the `dev` dependency group.
 - **dbt is uv-managed, not on PATH directly.** Invoke it as:
   `uv run dbt <command> --project-dir dbt --profiles-dir ~/.dbt`

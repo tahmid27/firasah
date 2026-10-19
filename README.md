@@ -83,6 +83,8 @@ uv run python -m ingestion.mailchimp_campaigns
 uv run dbt build --project-dir dbt --profiles-dir ~/.dbt
 ```
 
+**Quickest way to see the dashboard:** `./demo.sh` starts the API on the synthetic demo data and the website together, opens http://localhost:3000 and prints the demo logins (e.g. `demo-small@example.com` / `demo-small`). Ctrl+C stops both.
+
 Dashboard (Next.js, in `web/`). It needs the API running; the Next.js server calls the API for the user, the browser never does:
 
 ```bash
