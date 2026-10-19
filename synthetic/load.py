@@ -7,7 +7,6 @@ Usage: uv run python -m synthetic.load [--seed 42] [--skip-supabase]
 
 import argparse
 import os
-import secrets
 import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
@@ -94,10 +93,10 @@ def demo_logins() -> None:
         ).raise_for_status()
         env_key = f"FIRASAH_{c.org_id.upper()}"
         if not os.environ.get(f"{env_key}_USER_ID"):
-            email, password = (
-                f"{c.org_id.replace('_', '-')}@example.com",
-                secrets.token_urlsafe(24),
-            )
+            # Demo accounts see only synthetic data, so an easy-to-type
+            # password (the account name) is fine: demo-small / demo-small
+            name = c.org_id.replace("_", "-")
+            email, password = f"{name}@example.com", name
             response = httpx.post(
                 f"{url}/auth/v1/admin/users",
                 headers=headers,
