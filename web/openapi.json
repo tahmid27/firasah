@@ -1,0 +1,3715 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Firasah API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/overview/summary": {
+      "get": {
+        "tags": [
+          "overview"
+        ],
+        "summary": "Overview Summary",
+        "operationId": "overview_summary_overview_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewSummary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/data-health/sources": {
+      "get": {
+        "tags": [
+          "overview"
+        ],
+        "summary": "Data Health",
+        "operationId": "data_health_data_health_sources_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataHealth"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/fundraising/summary": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Summary",
+        "operationId": "summary_fundraising_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundraisingSummary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/fundraising/income-over-time": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Income Over Time",
+        "operationId": "income_over_time_fundraising_income_over_time_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "week",
+                "month"
+              ],
+              "type": "string",
+              "default": "month",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSeriesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fundraising/fundraisers": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Fundraisers",
+        "operationId": "fundraisers_fundraising_fundraisers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundraiserLeaderboard"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fundraising/projects": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Projects",
+        "operationId": "projects_fundraising_projects_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectList"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/fundraising/gift-sizes": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Gift Sizes",
+        "operationId": "gift_sizes_fundraising_gift_sizes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GiftSizes"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fundraising/gift-aid": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Gift Aid",
+        "description": "LaunchGood records the Gift Aid flag per donation; JustGiving only gives\nits own page-level estimate, reported separately.",
+        "operationId": "gift_aid_fundraising_gift_aid_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GiftAid"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fundraising/zakat": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Zakat",
+        "operationId": "zakat_fundraising_zakat_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Zakat"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fundraising/fees": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Fees",
+        "description": "Gross vs net per month. LaunchGood only: JustGiving doesn't report fees.",
+        "operationId": "fees_fundraising_fees_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSeriesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fundraising/traffic-sources": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Traffic Sources",
+        "operationId": "traffic_sources_fundraising_traffic_sources_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrafficSources"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fundraising/targets": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Targets",
+        "description": "JustGiving pages that have a target. LaunchGood exports don't include one.",
+        "operationId": "targets_fundraising_targets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Targets"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/fundraising/timing": {
+      "get": {
+        "tags": [
+          "fundraising"
+        ],
+        "summary": "Timing",
+        "description": "Donations by day of week and hour, in UK time.",
+        "operationId": "timing_fundraising_timing_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Heatmap"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/followers-over-time": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "Followers Over Time",
+        "operationId": "followers_over_time_social_followers_over_time_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "day",
+                "week",
+                "month"
+              ],
+              "type": "string",
+              "default": "day",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSeriesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/net-followers": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "Net Followers",
+        "description": "Followers gained or lost per period, from the last reading in each period.",
+        "operationId": "net_followers_social_net_followers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "week",
+                "month"
+              ],
+              "type": "string",
+              "default": "week",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSeriesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/posts": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "Posts",
+        "operationId": "posts_social_posts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "instagram",
+                    "tiktok"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Platform"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "engagement_rate",
+                "reach",
+                "views",
+                "likes",
+                "posted_at"
+              ],
+              "type": "string",
+              "default": "engagement_rate",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Posts"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/formats": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "Formats",
+        "description": "How each format performs: Reel vs image vs carousel vs TikTok video.",
+        "operationId": "formats_social_formats_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "instagram",
+                    "tiktok"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Platform"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Formats"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/posting-consistency": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "Posting Consistency",
+        "operationId": "posting_consistency_social_posting_consistency_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "weeks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 104,
+              "minimum": 1,
+              "default": 12,
+              "title": "Weeks"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostingConsistency"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/best-time": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "Best Time",
+        "description": "Average engagement rate by day of week and hour posted, in UK time.",
+        "operationId": "best_time_social_best_time_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "instagram",
+                    "tiktok"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Platform"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Heatmap"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/account-daily": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "Account Daily",
+        "description": "Instagram account-level activity over time (TikTok's access doesn't give this).",
+        "operationId": "account_daily_social_account_daily_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "day",
+                "week",
+                "month"
+              ],
+              "type": "string",
+              "default": "day",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSeriesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/demographics": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "Demographics",
+        "description": "Latest follower demographics. Shares are of the followers the platform\ncould classify, which can be well under the total follower count.",
+        "operationId": "demographics_social_demographics_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "const": "instagram",
+              "type": "string",
+              "default": "instagram",
+              "title": "Platform"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Demographics"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/campaigns": {
+      "get": {
+        "tags": [
+          "email"
+        ],
+        "summary": "Campaigns",
+        "operationId": "campaigns_email_campaigns_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignScorecard"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/audience-growth": {
+      "get": {
+        "tags": [
+          "email"
+        ],
+        "summary": "Audience Growth",
+        "description": "Subscribes and unsubscribes per period. Mailchimp's daily figures count\nform sign-ups only: contacts added by hand or imported don't appear.",
+        "operationId": "audience_growth_email_audience_growth_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "day",
+                "week",
+                "month"
+              ],
+              "type": "string",
+              "default": "week",
+              "title": "Interval"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSeriesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/campaigns/{campaign_id}/links": {
+      "get": {
+        "tags": [
+          "email"
+        ],
+        "summary": "Campaign Links",
+        "operationId": "campaign_links_email_campaigns__campaign_id__links_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "campaign_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]{1,64}$",
+              "title": "Campaign Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignLinks"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/list-health": {
+      "get": {
+        "tags": [
+          "email"
+        ],
+        "summary": "List Health",
+        "description": "Monthly subscribed, unsubscribed, cleaned (dead) addresses, and bounces.",
+        "operationId": "list_health_email_list_health_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 36,
+              "minimum": 1,
+              "default": 12,
+              "title": "Months"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeSeriesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/send-times": {
+      "get": {
+        "tags": [
+          "email"
+        ],
+        "summary": "Send Times",
+        "description": "When supporters open and click: by hours after sending (averaged across\ncampaigns) and by hour of day in UK time (totals).",
+        "operationId": "send_times_email_send_times_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendTimes"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/appeals/timeline": {
+      "get": {
+        "tags": [
+          "appeals"
+        ],
+        "summary": "Timeline",
+        "operationId": "timeline_appeals_timeline_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppealTimeline"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appeals/window-report": {
+      "get": {
+        "tags": [
+          "appeals"
+        ],
+        "summary": "Window Report",
+        "description": "A chosen window (e.g. Ramadan) against the same-length window before it.",
+        "operationId": "window_report_appeals_window_report_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WindowReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/appeals/email-lift": {
+      "get": {
+        "tags": [
+          "appeals"
+        ],
+        "summary": "Email Lift",
+        "description": "Donations on the day of each email and the day after, against a typical\ntwo days in the weeks before it. A pattern to look at, not proof the\nemail caused the donations.",
+        "operationId": "email_lift_appeals_email_lift_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "baseline_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 180,
+              "minimum": 7,
+              "default": 28,
+              "title": "Baseline Days"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailLift"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "summary": "Me",
+        "description": "The caller's user ID, organisation and role.",
+        "operationId": "me_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/tiktok/callback": {
+      "get": {
+        "summary": "Tiktok Callback",
+        "description": "Placeholder TikTok OAuth redirect (Sandbox). Public: TikTok calls it.\nMust check `state` once it exchanges tokens. Doesn't echo the code.",
+        "operationId": "tiktok_callback_auth_tiktok_callback_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Code"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AppealTimeline": {
+        "properties": {
+          "donations": {
+            "$ref": "#/components/schemas/TimeSeriesResponse"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "donations",
+          "events"
+        ],
+        "title": "AppealTimeline"
+      },
+      "CampaignLinks": {
+        "properties": {
+          "campaign_id": {
+            "type": "string",
+            "title": "Campaign Id"
+          },
+          "campaign_title": {
+            "type": "string",
+            "title": "Campaign Title"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/LinkRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaign_id",
+          "campaign_title",
+          "rows"
+        ],
+        "title": "CampaignLinks"
+      },
+      "CampaignRow": {
+        "properties": {
+          "campaign_id": {
+            "type": "string",
+            "title": "Campaign Id"
+          },
+          "campaign_title": {
+            "type": "string",
+            "title": "Campaign Title"
+          },
+          "subject_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Line"
+          },
+          "send_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Send Time"
+          },
+          "emails_sent": {
+            "type": "integer",
+            "title": "Emails Sent"
+          },
+          "unique_opens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unique Opens"
+          },
+          "open_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Rate"
+          },
+          "unique_clicks": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unique Clicks"
+          },
+          "click_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Click Rate"
+          },
+          "click_to_open_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Click To Open Rate"
+          },
+          "unsubscribes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unsubscribes"
+          },
+          "bounces": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bounces"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaign_id",
+          "campaign_title",
+          "subject_line",
+          "send_time",
+          "emails_sent",
+          "unique_opens",
+          "open_rate",
+          "unique_clicks",
+          "click_rate",
+          "click_to_open_rate",
+          "unsubscribes",
+          "bounces"
+        ],
+        "title": "CampaignRow"
+      },
+      "CampaignScorecard": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/CampaignRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "title": "CampaignScorecard"
+      },
+      "DataHealth": {
+        "properties": {
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceStatus"
+            },
+            "type": "array",
+            "title": "Sources"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sources"
+        ],
+        "title": "DataHealth"
+      },
+      "DemographicBucket": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "followers": {
+            "type": "integer",
+            "title": "Followers"
+          },
+          "share_pct": {
+            "type": "number",
+            "title": "Share Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "followers",
+          "share_pct"
+        ],
+        "title": "DemographicBucket"
+      },
+      "Demographics": {
+        "properties": {
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "breakdowns": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/DemographicBucket"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Breakdowns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "platform",
+          "as_of",
+          "breakdowns"
+        ],
+        "title": "Demographics"
+      },
+      "EmailLift": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "GBP",
+            "title": "Currency"
+          },
+          "baseline_days": {
+            "type": "integer",
+            "title": "Baseline Days"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/EmailLiftRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "baseline_days",
+          "rows"
+        ],
+        "title": "EmailLift"
+      },
+      "EmailLiftRow": {
+        "properties": {
+          "campaign_id": {
+            "type": "string",
+            "title": "Campaign Id"
+          },
+          "campaign_title": {
+            "type": "string",
+            "title": "Campaign Title"
+          },
+          "send_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Send Time"
+          },
+          "raised_2_days": {
+            "type": "number",
+            "title": "Raised 2 Days"
+          },
+          "donations_2_days": {
+            "type": "integer",
+            "title": "Donations 2 Days"
+          },
+          "typical_2_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Typical 2 Days"
+          },
+          "lift_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lift Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaign_id",
+          "campaign_title",
+          "send_time",
+          "raised_2_days",
+          "donations_2_days",
+          "typical_2_days",
+          "lift_pct"
+        ],
+        "title": "EmailLiftRow"
+      },
+      "FormatRow": {
+        "properties": {
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "posts": {
+            "type": "integer",
+            "title": "Posts"
+          },
+          "median_engagement_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Engagement Rate"
+          },
+          "average_engagement_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Engagement Rate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "platform",
+          "format",
+          "posts",
+          "median_engagement_rate",
+          "average_engagement_rate"
+        ],
+        "title": "FormatRow"
+      },
+      "Formats": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/FormatRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "title": "Formats"
+      },
+      "FundraiserLeaderboard": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "GBP",
+            "title": "Currency"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/FundraiserRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "rows"
+        ],
+        "title": "FundraiserLeaderboard"
+      },
+      "FundraiserRow": {
+        "properties": {
+          "project_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Name"
+          },
+          "fundraiser_name": {
+            "type": "string",
+            "title": "Fundraiser Name"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "raised": {
+            "type": "number",
+            "title": "Raised"
+          },
+          "donations": {
+            "type": "integer",
+            "title": "Donations"
+          },
+          "average_gift": {
+            "type": "number",
+            "title": "Average Gift"
+          },
+          "last_donation_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Donation At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_name",
+          "fundraiser_name",
+          "source",
+          "raised",
+          "donations",
+          "average_gift",
+          "last_donation_at"
+        ],
+        "title": "FundraiserRow"
+      },
+      "FundraisingSummary": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "GBP",
+            "title": "Currency"
+          },
+          "this_month": {
+            "$ref": "#/components/schemas/MonthTotals"
+          },
+          "last_month": {
+            "$ref": "#/components/schemas/MonthTotals"
+          },
+          "raised_change_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raised Change Pct"
+          },
+          "excluded_non_gbp_donations": {
+            "type": "integer",
+            "title": "Excluded Non Gbp Donations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "this_month",
+          "last_month",
+          "raised_change_pct",
+          "excluded_non_gbp_donations"
+        ],
+        "title": "FundraisingSummary"
+      },
+      "GiftAid": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "GBP",
+            "title": "Currency"
+          },
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "eligible_amount": {
+            "type": "number",
+            "title": "Eligible Amount"
+          },
+          "claim_value": {
+            "type": "number",
+            "title": "Claim Value"
+          },
+          "donations_with_gift_aid": {
+            "type": "integer",
+            "title": "Donations With Gift Aid"
+          },
+          "donations": {
+            "type": "integer",
+            "title": "Donations"
+          },
+          "gift_aid_share_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gift Aid Share Pct"
+          },
+          "justgiving_estimated_gift_aid": {
+            "type": "number",
+            "title": "Justgiving Estimated Gift Aid"
+          },
+          "data": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "start",
+          "end",
+          "eligible_amount",
+          "claim_value",
+          "donations_with_gift_aid",
+          "donations",
+          "gift_aid_share_pct",
+          "justgiving_estimated_gift_aid",
+          "data"
+        ],
+        "title": "GiftAid"
+      },
+      "GiftSizeBand": {
+        "properties": {
+          "band": {
+            "type": "string",
+            "title": "Band"
+          },
+          "min_amount": {
+            "type": "number",
+            "title": "Min Amount"
+          },
+          "max_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Amount"
+          },
+          "donations": {
+            "type": "integer",
+            "title": "Donations"
+          },
+          "raised": {
+            "type": "number",
+            "title": "Raised"
+          }
+        },
+        "type": "object",
+        "required": [
+          "band",
+          "min_amount",
+          "max_amount",
+          "donations",
+          "raised"
+        ],
+        "title": "GiftSizeBand"
+      },
+      "GiftSizes": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "GBP",
+            "title": "Currency"
+          },
+          "bands": {
+            "items": {
+              "$ref": "#/components/schemas/GiftSizeBand"
+            },
+            "type": "array",
+            "title": "Bands"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "bands"
+        ],
+        "title": "GiftSizes"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Heatmap": {
+        "properties": {
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "metric": {
+            "type": "string",
+            "title": "Metric"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/HeatmapCell"
+            },
+            "type": "array",
+            "title": "Cells"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timezone",
+          "metric",
+          "cells"
+        ],
+        "title": "Heatmap"
+      },
+      "HeatmapCell": {
+        "properties": {
+          "day_of_week": {
+            "type": "integer",
+            "title": "Day Of Week"
+          },
+          "hour": {
+            "type": "integer",
+            "title": "Hour"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day_of_week",
+          "hour",
+          "count",
+          "value"
+        ],
+        "title": "HeatmapCell"
+      },
+      "HourRow": {
+        "properties": {
+          "hour": {
+            "type": "integer",
+            "title": "Hour"
+          },
+          "opens": {
+            "type": "number",
+            "title": "Opens"
+          },
+          "clicks": {
+            "type": "number",
+            "title": "Clicks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hour",
+          "opens",
+          "clicks"
+        ],
+        "title": "HourRow"
+      },
+      "LastPost": {
+        "properties": {
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "last_posted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Posted At"
+          },
+          "days_since": {
+            "type": "integer",
+            "title": "Days Since"
+          }
+        },
+        "type": "object",
+        "required": [
+          "platform",
+          "last_posted_at",
+          "days_since"
+        ],
+        "title": "LastPost"
+      },
+      "LinkRow": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "total_clicks": {
+            "type": "integer",
+            "title": "Total Clicks"
+          },
+          "unique_clicks": {
+            "type": "integer",
+            "title": "Unique Clicks"
+          },
+          "share_of_clicks_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Of Clicks Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "total_clicks",
+          "unique_clicks",
+          "share_of_clicks_pct"
+        ],
+        "title": "LinkRow"
+      },
+      "MeResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "org_id": {
+            "type": "string",
+            "title": "Org Id"
+          },
+          "org_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Org Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "org_id",
+          "org_name",
+          "role"
+        ],
+        "title": "MeResponse"
+      },
+      "MetricChange": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change"
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "previous",
+          "change",
+          "change_pct"
+        ],
+        "title": "MetricChange"
+      },
+      "MonthTotals": {
+        "properties": {
+          "month_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Month Start"
+          },
+          "raised": {
+            "type": "number",
+            "title": "Raised"
+          },
+          "donations": {
+            "type": "integer",
+            "title": "Donations"
+          },
+          "average_gift": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Gift"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month_start",
+          "raised",
+          "donations",
+          "average_gift"
+        ],
+        "title": "MonthTotals"
+      },
+      "OverviewSummary": {
+        "properties": {
+          "followers": {
+            "$ref": "#/components/schemas/MetricChange"
+          },
+          "email_subscribers": {
+            "$ref": "#/components/schemas/MetricChange"
+          },
+          "compared_with": {
+            "type": "string",
+            "format": "date",
+            "title": "Compared With"
+          }
+        },
+        "type": "object",
+        "required": [
+          "followers",
+          "email_subscribers",
+          "compared_with"
+        ],
+        "title": "OverviewSummary"
+      },
+      "PostRow": {
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "title": "Post Id"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "posted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Posted At"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          },
+          "permalink": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permalink"
+          },
+          "views": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Views"
+          },
+          "reach": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach"
+          },
+          "likes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Likes"
+          },
+          "comments": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comments"
+          },
+          "shares": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shares"
+          },
+          "saves": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Saves"
+          },
+          "engagement_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engagement Rate"
+          },
+          "view_to_like_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View To Like Rate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "post_id",
+          "platform",
+          "posted_at",
+          "format",
+          "caption",
+          "permalink",
+          "views",
+          "reach",
+          "likes",
+          "comments",
+          "shares",
+          "saves",
+          "engagement_rate",
+          "view_to_like_rate"
+        ],
+        "title": "PostRow"
+      },
+      "PostingConsistency": {
+        "properties": {
+          "posts_per_week": {
+            "$ref": "#/components/schemas/TimeSeriesResponse"
+          },
+          "last_posts": {
+            "items": {
+              "$ref": "#/components/schemas/LastPost"
+            },
+            "type": "array",
+            "title": "Last Posts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "posts_per_week",
+          "last_posts"
+        ],
+        "title": "PostingConsistency"
+      },
+      "Posts": {
+        "properties": {
+          "engagement_basis": {
+            "type": "string",
+            "title": "Engagement Basis"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/PostRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engagement_basis",
+          "rows"
+        ],
+        "title": "Posts"
+      },
+      "ProjectList": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "GBP",
+            "title": "Currency"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "rows"
+        ],
+        "title": "ProjectList"
+      },
+      "ProjectRow": {
+        "properties": {
+          "project_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Name"
+          },
+          "raised": {
+            "type": "number",
+            "title": "Raised"
+          },
+          "donations": {
+            "type": "integer",
+            "title": "Donations"
+          },
+          "fundraisers": {
+            "type": "integer",
+            "title": "Fundraisers"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "last_donation_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Donation At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_name",
+          "raised",
+          "donations",
+          "fundraisers",
+          "sources",
+          "last_donation_at"
+        ],
+        "title": "ProjectRow"
+      },
+      "SendTimes": {
+        "properties": {
+          "campaigns": {
+            "type": "integer",
+            "title": "Campaigns"
+          },
+          "by_hours_after_send": {
+            "items": {
+              "$ref": "#/components/schemas/HourRow"
+            },
+            "type": "array",
+            "title": "By Hours After Send"
+          },
+          "by_hour_of_day": {
+            "items": {
+              "$ref": "#/components/schemas/HourRow"
+            },
+            "type": "array",
+            "title": "By Hour Of Day"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "campaigns",
+          "by_hours_after_send",
+          "by_hour_of_day",
+          "timezone"
+        ],
+        "title": "SendTimes"
+      },
+      "SeriesInfo": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "SeriesInfo"
+      },
+      "SourceStatus": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "last_data_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Data At"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          },
+          "last_run_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run Status"
+          },
+          "last_error_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error Type"
+          },
+          "last_http_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Http Status"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          },
+          "hours_since_data": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hours Since Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "label",
+          "last_data_at",
+          "last_run_at",
+          "last_run_status",
+          "last_error_type",
+          "last_http_status",
+          "last_success_at",
+          "hours_since_data"
+        ],
+        "title": "SourceStatus"
+      },
+      "TargetRow": {
+        "properties": {
+          "fundraiser_name": {
+            "type": "string",
+            "title": "Fundraiser Name"
+          },
+          "project_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Name"
+          },
+          "page_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Status"
+          },
+          "target": {
+            "type": "number",
+            "title": "Target"
+          },
+          "raised": {
+            "type": "number",
+            "title": "Raised"
+          },
+          "progress_pct": {
+            "type": "number",
+            "title": "Progress Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fundraiser_name",
+          "project_name",
+          "page_status",
+          "target",
+          "raised",
+          "progress_pct"
+        ],
+        "title": "TargetRow"
+      },
+      "Targets": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "GBP",
+            "title": "Currency"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TargetRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "rows"
+        ],
+        "title": "Targets"
+      },
+      "TimeSeriesResponse": {
+        "properties": {
+          "interval": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week",
+              "month"
+            ],
+            "title": "Interval"
+          },
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/SeriesInfo"
+            },
+            "type": "array",
+            "title": "Series"
+          },
+          "data": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "interval",
+          "start",
+          "end",
+          "unit",
+          "series",
+          "data"
+        ],
+        "title": "TimeSeriesResponse",
+        "description": "`data` is one flat object per period, as Recharts expects:\n{\"period\": \"2026-10-01\", \"justgiving\": 210.0, \"launchgood\": 40.0}."
+      },
+      "TimelineEvent": {
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "post",
+              "email"
+            ],
+            "title": "Kind"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          }
+        },
+        "type": "object",
+        "required": [
+          "at",
+          "kind",
+          "platform",
+          "title",
+          "link"
+        ],
+        "title": "TimelineEvent"
+      },
+      "TrafficSourceRow": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "traffic_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traffic Source"
+          },
+          "raised": {
+            "type": "number",
+            "title": "Raised"
+          },
+          "donations": {
+            "type": "integer",
+            "title": "Donations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "traffic_source",
+          "raised",
+          "donations"
+        ],
+        "title": "TrafficSourceRow"
+      },
+      "TrafficSources": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "GBP",
+            "title": "Currency"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TrafficSourceRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "rows"
+        ],
+        "title": "TrafficSources"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WindowReport": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "GBP",
+            "title": "Currency"
+          },
+          "current": {
+            "$ref": "#/components/schemas/WindowStats"
+          },
+          "previous": {
+            "$ref": "#/components/schemas/WindowStats"
+          },
+          "raised_change_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raised Change Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "current",
+          "previous",
+          "raised_change_pct"
+        ],
+        "title": "WindowReport"
+      },
+      "WindowStats": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "raised": {
+            "type": "number",
+            "title": "Raised"
+          },
+          "donations": {
+            "type": "integer",
+            "title": "Donations"
+          },
+          "posts": {
+            "type": "integer",
+            "title": "Posts"
+          },
+          "emails": {
+            "type": "integer",
+            "title": "Emails"
+          },
+          "follower_change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follower Change"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "raised",
+          "donations",
+          "posts",
+          "emails",
+          "follower_change"
+        ],
+        "title": "WindowStats"
+      },
+      "Zakat": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "const": "GBP",
+            "title": "Currency"
+          },
+          "total_zakat": {
+            "type": "number",
+            "title": "Total Zakat"
+          },
+          "donations": {
+            "type": "integer",
+            "title": "Donations"
+          },
+          "by_project": {
+            "items": {
+              "$ref": "#/components/schemas/ZakatProjectRow"
+            },
+            "type": "array",
+            "title": "By Project"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "total_zakat",
+          "donations",
+          "by_project"
+        ],
+        "title": "Zakat"
+      },
+      "ZakatProjectRow": {
+        "properties": {
+          "project_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Name"
+          },
+          "zakat": {
+            "type": "number",
+            "title": "Zakat"
+          },
+          "donations": {
+            "type": "integer",
+            "title": "Donations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_name",
+          "zakat",
+          "donations"
+        ],
+        "title": "ZakatProjectRow"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
