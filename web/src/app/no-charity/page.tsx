@@ -5,12 +5,12 @@ export default function NoCharityPage() {
     <main className="flex flex-1 items-center justify-center px-4">
       <div className="max-w-sm text-center">
         <h1 className="mb-2 text-xl font-semibold">No charity linked</h1>
-        <p className="mb-6 text-neutral-600">
+        <p className="mb-6 text-ink-2">
           Your account isn&apos;t linked to a charity yet. Ask your
           charity&apos;s Firasah admin to add you.
         </p>
         <form action={signOut}>
-          <button className="underline">Sign out</button>
+          <button className="text-sm text-accent underline">Sign out</button>
         </form>
       </div>
     </main>
