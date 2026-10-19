@@ -17,12 +17,12 @@ import { count, gbp, gbpShort } from "@/lib/format";
 export type Band = { band: string; donations: number; raised: number };
 
 const MEASURES = {
-  donations: { label: "Number of gifts", format: count, axis: count },
+  donations: { label: "Individual donations", format: count, axis: count },
   raised: { label: "Amount raised", format: gbp, axis: gbpShort },
 } as const;
 
-// Gift-size bands, switchable between how many gifts and how much money:
-// small gifts are usually most of the count but not most of the money.
+// Donation-size bands, switchable between how many donations and how much
+// money: small donations are usually most of the count but not of the money.
 export function BandBars({ data }: { data: Band[] }) {
   const [measure, setMeasure] = useState<keyof typeof MEASURES>("donations");
   const { axis } = MEASURES[measure];
@@ -55,7 +55,7 @@ export function BandBars({ data }: { data: Band[] }) {
       <div
         className="h-56 w-full"
         role="img"
-        aria-label={`Gift sizes by ${MEASURES[measure].label.toLowerCase()}`}
+        aria-label={`Donation sizes by ${MEASURES[measure].label.toLowerCase()}`}
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -84,9 +84,9 @@ export function BandBars({ data }: { data: Band[] }) {
                 if (!active || !band) return null;
                 return (
                   <div className="rounded-md border border-border bg-surface px-3 py-2 text-xs shadow-md">
-                    <p className="text-muted">Gifts of {band.band}</p>
+                    <p className="text-muted">Donations of {band.band}</p>
                     <p className="mt-1 tabular-nums text-ink">
-                      {count(band.donations)} gifts
+                      {count(band.donations)} donations
                     </p>
                     <p className="tabular-nums text-ink">
                       {gbp(band.raised)} raised

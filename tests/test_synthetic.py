@@ -198,3 +198,19 @@ def test_justgiving_pages_end_near_their_targets(generated):
         else:
             # A supporter's page stops collecting near its target
             assert raised <= 3 * target, page["title"]
+
+
+def test_audience_series_lands_on_its_counts_and_has_dips():
+    import random
+    from datetime import date, timedelta
+    from itertools import pairwise
+
+    from synthetic.rand import audience_series
+
+    start, end = date(2025, 1, 1), date(2025, 12, 31)
+    drops = {start + timedelta(days=d): 0.005 for d in range(30, 360, 45)}
+    series = audience_series(random.Random(3), start, end, (1000, 1500), {}, drops)
+    values = list(series.values())
+
+    assert values[0] == 1000 and 1492 <= values[-1] <= 1508
+    assert sum(b < a for a, b in pairwise(values)) >= len(drops)

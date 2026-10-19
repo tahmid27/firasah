@@ -103,7 +103,7 @@ def summary(wh: Warehouse, today: Today):
 def income_over_time(
     wh: Warehouse,
     today: Today,
-    interval: Literal["week", "month"] = "month",
+    interval: Literal["day", "week", "month"] = "month",
     start: date | None = None,
     end: date | None = None,
 ):

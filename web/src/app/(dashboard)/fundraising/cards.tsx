@@ -41,7 +41,7 @@ function change(now: number | null, before: number | null) {
 }
 
 // Totals for the range, against the same number of days just before it.
-// Built from the gift-size bands, which already cover every GBP gift.
+// Built from the donation-size bands, which already cover every GBP donation.
 export async function TotalsTiles({ searchParams }: Props) {
   const range = await rangeFrom(searchParams);
   const before = previousRange(range);
@@ -71,13 +71,13 @@ export async function TotalsTiles({ searchParams }: Props) {
       was: gbp(then.raised),
     },
     {
-      title: "Gifts",
+      title: "Donations",
       value: count(now.donations),
       pct: change(now.donations, then.donations),
       was: count(then.donations),
     },
     {
-      title: "Average gift",
+      title: "Average donation",
       value: now.average === null ? "–" : gbpExact(now.average),
       pct: change(now.average, then.average),
       was: then.average === null ? "–" : gbpExact(then.average),
@@ -103,10 +103,13 @@ function isPartial(
   period: string,
   index: number,
   last: number,
-  interval: "week" | "month",
+  interval: "day" | "week" | "month",
   start: string,
   end: string,
+  today: string,
 ) {
+  // A day is only part-done if it's today (data arrives once a day)
+  if (interval === "day") return period === today;
   const day = 86_400_000;
   const periodStart = Date.parse(period);
   let periodEnd: number;
@@ -121,6 +124,8 @@ function isPartial(
     (index === last && Date.parse(end) < periodEnd)
   );
 }
+
+const INTERVAL_NAMES = { day: "Daily", week: "Weekly", month: "Monthly" };
 
 // F1
 export async function IncomeCard({ searchParams }: Props) {
@@ -148,13 +153,21 @@ export async function IncomeCard({ searchParams }: Props) {
     return {
       ...row,
       period,
-      partial: isPartial(period, index, last, interval, range.start, range.end),
+      partial: isPartial(
+        period,
+        index,
+        last,
+        interval,
+        range.start,
+        range.end,
+        range.today,
+      ),
     };
   });
   return (
     <Card
       title={title}
-      subtitle={`${interval === "week" ? "Weekly" : "Monthly"} · ${range.label} · periods only partly in range shown lighter`}
+      subtitle={`${INTERVAL_NAMES[interval]} · ${range.label} · periods only partly in range shown lighter`}
     >
       {series.length === 0 ? (
         <p className="text-sm text-ink-2">No donations in this period.</p>
@@ -163,7 +176,7 @@ export async function IncomeCard({ searchParams }: Props) {
           data={data}
           series={series}
           interval={interval}
-          label={`${interval === "week" ? "Weekly" : "Monthly"} income, ${range.label}`}
+          label={`${INTERVAL_NAMES[interval]} income, ${range.label}`}
         />
       )}
     </Card>
@@ -222,7 +235,8 @@ export async function ProjectsCard({ searchParams }: Props) {
                   <p className="font-medium">No project</p>
                 )}
                 <p className="text-xs text-muted">
-                  {count(row.donations)} gifts · {row.fundraisers} fundraiser
+                  {count(row.donations)} donations · {row.fundraisers}{" "}
+                  fundraiser
                   {row.fundraisers === 1 ? "" : "s"} ·{" "}
                   {row.sources.map(platformName).join(", ")}
                 </p>
@@ -243,23 +257,34 @@ export async function ProjectsCard({ searchParams }: Props) {
   );
 }
 
-// F9
-export async function TargetsCard() {
+// F9: ranked by overall progress (how close each page is to its goal), with
+// what it gained in the chosen period alongside, so momentum is visible
+// without reordering the list every time the range changes.
+export async function TargetsCard({ searchParams }: Props) {
   const title = "Progress against targets";
+  const range = await rangeFrom(searchParams);
   const result = await attempt(async () => {
     const api = await apiClient();
-    const [targets, connected] = await Promise.all([
+    const [targets, period, connected] = await Promise.all([
       api.GET("/fundraising/targets"),
+      api.GET("/fundraising/fundraisers", {
+        params: { query: { start: range.start, end: range.end, limit: 200 } },
+      }),
       connectedSources(),
     ]);
-    return { rows: unwrap(targets).rows, connected };
+    const gained = new Map(
+      unwrap(period)
+        .rows.filter((r) => r.source === "justgiving")
+        .map((r) => [r.fundraiser_name, r.raised]),
+    );
+    return { rows: unwrap(targets).rows, gained, connected };
   });
   if (!result) return <CardError title={title} />;
 
   return (
     <Card
       title={title}
-      subtitle="JustGiving pages with a target · all-time totals"
+      subtitle={`JustGiving pages with a target · overall progress, and what each gained in ${range.label}`}
     >
       {!result.connected.has("justgiving") ? (
         <p className="text-sm text-ink-2">
@@ -272,32 +297,55 @@ export async function TargetsCard() {
         </p>
       ) : (
         <ul className="flex flex-col gap-3">
-          {result.rows.map((row) => (
-            <li key={row.fundraiser_name} className="flex flex-col gap-1">
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="min-w-0">
-                  <span className="font-medium">{row.fundraiser_name}</span>
-                  {row.page_status && row.page_status !== "Active" && (
-                    <span className="ml-2 text-xs text-muted">
-                      {row.page_status}
-                    </span>
-                  )}
-                </span>
-                <span className="shrink-0 font-medium tabular-nums">
-                  {percent(row.progress_pct, 0)}
-                </span>
-              </div>
-              <div className="h-1.5 rounded-full bg-surface-sunken" aria-hidden>
+          {result.rows.map((row) => {
+            const gained = result.gained.get(row.fundraiser_name) ?? 0;
+            const before = Math.max(
+              0,
+              row.progress_pct - (gained / row.target) * 100,
+            );
+            return (
+              <li key={row.fundraiser_name} className="flex flex-col gap-1">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="min-w-0">
+                    <span className="font-medium">{row.fundraiser_name}</span>
+                    {row.page_status && row.page_status !== "Active" && (
+                      <span className="ml-2 text-xs text-muted">
+                        {row.page_status}
+                      </span>
+                    )}
+                  </span>
+                  <span className="shrink-0 font-medium tabular-nums">
+                    {percent(row.progress_pct, 0)}
+                  </span>
+                </div>
                 <div
-                  className="h-full rounded-full bg-series-1"
-                  style={{ width: `${Math.min(100, row.progress_pct)}%` }}
-                />
-              </div>
-              <p className="text-xs text-muted tabular-nums">
-                {gbp(row.raised)} of {gbp(row.target)}
-              </p>
-            </li>
-          ))}
+                  className="flex h-1.5 overflow-hidden rounded-full bg-surface-sunken"
+                  aria-hidden
+                >
+                  <div
+                    className="h-full bg-series-1 opacity-45"
+                    style={{ width: `${Math.min(100, before)}%` }}
+                  />
+                  <div
+                    className="h-full bg-series-1"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, row.progress_pct) - Math.min(100, before))}%`,
+                    }}
+                  />
+                </div>
+                <p className="flex justify-between gap-3 text-xs text-muted tabular-nums">
+                  <span>
+                    {gbp(row.raised)} of {gbp(row.target)}
+                  </span>
+                  <span className={gained > 0 ? "text-ink-2" : ""}>
+                    {gained > 0
+                      ? `+${gbp(gained)} (+${percent((gained / row.target) * 100, 0)}) this period`
+                      : "Nothing this period"}
+                  </span>
+                </p>
+              </li>
+            );
+          })}
         </ul>
       )}
     </Card>
@@ -359,7 +407,7 @@ export async function LeaderboardCard({ searchParams }: Props) {
 
 // F8
 export async function TrafficCard({ searchParams }: Props) {
-  const title = "Where gifts came from";
+  const title = "Where donations came from";
   const range = await rangeFrom(searchParams);
   const result = await attempt(async () => {
     const api = await apiClient();
@@ -438,7 +486,7 @@ export async function TrafficCard({ searchParams }: Props) {
 
 // F4
 export async function GiftSizesCard({ searchParams }: Props) {
-  const title = "Gift sizes";
+  const title = "Donation sizes";
   const range = await rangeFrom(searchParams);
   const result = await attempt(() => giftSizes(range.start, range.end));
   if (!result) return <CardError title={title} />;
@@ -470,11 +518,8 @@ export async function TimingCard({ searchParams }: Props) {
   if (!result) return <CardError title={title} />;
 
   return (
-    <Card
-      title={title}
-      subtitle={`Number of gifts by day and hour, UK time · ${range.label}`}
-    >
-      <Heatmap cells={result.cells} unit="gifts" />
+    <Card title={title} subtitle={`By day and hour, UK time · ${range.label}`}>
+      <Heatmap cells={result.cells} kind="donations" />
     </Card>
   );
 }
@@ -501,7 +546,10 @@ export async function GiftAidCard({ searchParams }: Props) {
   const { giftAid, connected } = result;
 
   return (
-    <Card title={title} subtitle="25% of eligible gifts, reclaimed from HMRC">
+    <Card
+      title={title}
+      subtitle="25% of eligible donations, reclaimed from HMRC"
+    >
       {connected.has("launchgood") && (
         <div className="flex flex-col gap-1">
           <p className="text-xs text-muted">LaunchGood · {range.label}</p>
@@ -509,9 +557,9 @@ export async function GiftAidCard({ searchParams }: Props) {
             {gbp(giftAid.claim_value)}
           </p>
           <p className="text-xs text-ink-2">
-            to claim on {gbp(giftAid.eligible_amount)} of eligible gifts
+            to claim on {gbp(giftAid.eligible_amount)} of eligible donations
             {giftAid.gift_aid_share_pct !== null &&
-              ` · ${percent(giftAid.gift_aid_share_pct, 0)} of gifts had Gift Aid`}
+              ` · ${percent(giftAid.gift_aid_share_pct, 0)} of donations had Gift Aid`}
           </p>
         </div>
       )}
@@ -523,7 +571,7 @@ export async function GiftAidCard({ searchParams }: Props) {
           </p>
           <p className="text-xs text-ink-2">
             JustGiving&apos;s own estimate. It claims Gift Aid for you and
-            doesn&apos;t share it per gift, so it can&apos;t follow the date
+            doesn&apos;t share it per donation, so it can&apos;t follow the date
             range.
           </p>
         </div>
@@ -556,11 +604,11 @@ export async function ZakatCard({ searchParams }: Props) {
     <Card title={title} subtitle={`LaunchGood · ${range.label}`}>
       {!connected.has("launchgood") ? (
         <NotApplicable>
-          Zakat is recorded on LaunchGood gifts. JustGiving doesn&apos;t mark
-          gifts as Zakat.
+          Zakat is recorded on LaunchGood donations. JustGiving doesn&apos;t
+          mark donations as Zakat.
         </NotApplicable>
       ) : zakat.donations === 0 ? (
-        <NotApplicable>No Zakat gifts in this period.</NotApplicable>
+        <NotApplicable>No Zakat donations in this period.</NotApplicable>
       ) : (
         <>
           <div>
@@ -568,7 +616,7 @@ export async function ZakatCard({ searchParams }: Props) {
               {gbp(zakat.total_zakat)}
             </p>
             <p className="text-xs text-ink-2">
-              from {count(zakat.donations)} gifts
+              from {count(zakat.donations)} donations
             </p>
           </div>
           <ul className="flex flex-col divide-y divide-hairline text-sm">
@@ -620,7 +668,7 @@ export async function FeesCard({ searchParams }: Props) {
           them in its data.
         </NotApplicable>
       ) : gross === 0 ? (
-        <NotApplicable>No LaunchGood gifts in this period.</NotApplicable>
+        <NotApplicable>No LaunchGood donations in this period.</NotApplicable>
       ) : (
         <>
           <div>

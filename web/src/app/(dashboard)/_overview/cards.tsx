@@ -53,7 +53,7 @@ export async function RaisedTile() {
           <dd className="font-medium tabular-nums">{count(now.donations)}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">Average gift</dt>
+          <dt className="text-xs text-muted">Average donation</dt>
           <dd className="font-medium tabular-nums">
             {now.average_gift === null ? "–" : gbpExact(now.average_gift)}
           </dd>

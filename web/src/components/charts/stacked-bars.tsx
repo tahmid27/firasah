@@ -11,7 +11,14 @@ import {
   YAxis,
 } from "recharts";
 
-import { dayMonth, gbp, gbpShort, monthShort, monthYear } from "@/lib/format";
+import {
+  count,
+  dayMonth,
+  gbp,
+  gbpShort,
+  monthShort,
+  monthYear,
+} from "@/lib/format";
 
 export type Series = { key: string; label: string; colour: string };
 export type StackedRow = { period: string; partial: boolean } & Record<
@@ -26,18 +33,24 @@ export function StackedBars({
   series,
   interval,
   label,
+  unit = "money",
 }: {
   data: StackedRow[];
   series: Series[];
-  interval: "week" | "month";
+  interval: "day" | "week" | "month";
   label: string;
+  unit?: "money" | "count";
 }) {
+  const full = unit === "money" ? gbp : count;
+  const short = unit === "money" ? gbpShort : count;
   const tick = (p: string) =>
     interval === "month" ? monthShort(p) : dayMonth(p);
   const title = (p: string) =>
     interval === "month"
       ? monthYear(p)
-      : `Week of ${dayMonth(p)} ${p.slice(0, 4)}`;
+      : interval === "week"
+        ? `Week of ${dayMonth(p)} ${p.slice(0, 4)}`
+        : `${dayMonth(p)} ${p.slice(0, 4)}`;
 
   return (
     <div className="flex flex-col gap-3">
@@ -72,7 +85,7 @@ export function StackedBars({
               minTickGap={16}
             />
             <YAxis
-              tickFormatter={gbpShort}
+              tickFormatter={short}
               tickLine={false}
               axisLine={false}
               tick={{ fill: "var(--muted)", fontSize: 12 }}
@@ -108,13 +121,13 @@ export function StackedBars({
                             {s.label}
                           </span>
                           <span className="tabular-nums text-ink">
-                            {gbp(Number(row[s.key] ?? 0))}
+                            {full(Number(row[s.key] ?? 0))}
                           </span>
                         </p>
                       ))}
                     <p className="mt-1 flex justify-between gap-4 text-sm font-medium text-ink">
                       {series.length > 1 && <span>Total</span>}
-                      <span className="tabular-nums">{gbp(total)}</span>
+                      <span className="tabular-nums">{full(total)}</span>
                     </p>
                   </div>
                 );
