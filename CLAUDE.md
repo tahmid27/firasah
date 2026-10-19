@@ -238,6 +238,8 @@ Build the FastAPI layer that serves modelled data to the frontend — endpoints,
 ### Phase 5 · Dashboard Frontend (~50-65 hrs)
 Build what charities actually see — Next.js/React dashboards with Tailwind and Recharts, wired to your backend.
 
+**Approach agreed 2026-10-19.** The app goes in `web/` in this repo, not a separate one. Process: (1) the user picks which visuals go on every page from a list of options, (2) an optional overall style pass, (3) pages are designed one at a time, and each page's layout and colours are signed off before the next page starts. The Mom Test calls come after a first version exists, to adjust the layout, not to decide it.
+
 - [ ] Scaffold the Next.js app and auth flow
 - [ ] Build the app shell, nav and routing
 - [ ] Build the core dashboard views
