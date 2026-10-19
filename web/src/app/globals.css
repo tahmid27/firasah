@@ -18,8 +18,10 @@
   --danger: #b42318;
 }
 
+/* Dark when the OS asks for it, unless the user picked light in the toggle;
+   and always when they picked dark. Same values in both places. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --page: #0d0d0d;
     --surface: #1a1a19;
@@ -34,6 +36,22 @@
     --accent-soft: #15302a;
     --danger: #f97066;
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-sunken: #232321;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #9a9890;
+  --hairline: #2c2c2a;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #4cc2a8;
+  --accent-ink: #0b0b0b;
+  --accent-soft: #15302a;
+  --danger: #f97066;
 }
 
 @theme inline {
