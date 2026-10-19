@@ -79,7 +79,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Fundraisers */
+        /**
+         * Fundraisers
+         * @description All time unless a range is given.
+         */
         get: operations["fundraisers_fundraising_fundraisers_get"];
         put?: never;
         post?: never;
@@ -768,6 +771,7 @@ export interface components {
             currency: "GBP";
             this_month: components["schemas"]["MonthTotals"];
             last_month: components["schemas"]["MonthTotals"];
+            last_month_to_date: components["schemas"]["MonthTotals"];
             /** Raised Change Pct */
             raised_change_pct: number | null;
             /** Excluded Non Gbp Donations */
@@ -916,6 +920,11 @@ export interface components {
              * Format: date
              */
             month_start: string;
+            /**
+             * Through
+             * Format: date
+             */
+            through: string;
             /** Raised */
             raised: number;
             /** Donations */
@@ -1320,6 +1329,8 @@ export interface operations {
             query?: {
                 project?: string | null;
                 limit?: number;
+                start?: string | null;
+                end?: string | null;
             };
             header?: never;
             path?: never;

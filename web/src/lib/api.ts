@@ -50,3 +50,14 @@ export const getMe = cache(async () => {
   const api = await apiClient();
   return unwrap(await api.GET("/me"));
 });
+
+// Shared by more than one card on a page: one API call per request.
+export const getFundraisingSummary = cache(async () => {
+  const api = await apiClient();
+  return unwrap(await api.GET("/fundraising/summary"));
+});
+
+export const getOverviewSummary = cache(async () => {
+  const api = await apiClient();
+  return unwrap(await api.GET("/overview/summary"));
+});

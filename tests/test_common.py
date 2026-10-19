@@ -267,3 +267,33 @@ def test_load_falls_back_to_inference_when_strict_parsing_refuses(monkeypatch):
     )
 
     assert attempts == [False, True]
+
+
+def test_load_sends_emoji_as_utf8_not_escapes(monkeypatch):
+    import gzip
+
+    from google.api_core.exceptions import NotFound
+
+    from ingestion import common
+
+    sent = []
+
+    class FakeJob:
+        def result(self):
+            pass
+
+    class FakeClient:
+        def get_table(self, table_id):
+            raise NotFound("no table yet")
+
+        def load_table_from_file(self, payload, table_id, job_config):
+            sent.append(gzip.decompress(payload.read()))
+            return FakeJob()
+
+    monkeypatch.setattr(common.bigquery, "Client", FakeClient)
+    common.load_raw_to_bigquery.fn(
+        [{"caption": "Thank you 💛"}], "p.d.t", {}, org_id="test_charity"
+    )
+
+    assert "Thank you 💛".encode() in sent[0]
+    assert b"\\ud83d" not in sent[0]

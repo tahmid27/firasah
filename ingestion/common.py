@@ -230,8 +230,14 @@ def load_raw_to_bigquery(
     except NotFound:
         existing = None
     # Sent gzip-compressed: raw API JSON shrinks several-fold, which matters
-    # on slow connections; BigQuery decompresses it on arrival
-    payload = gzip.compress("\n".join(json.dumps(row) for row in tagged_rows).encode())
+    # on slow connections; BigQuery decompresses it on arrival. ensure_ascii=False
+    # sends emoji as UTF-8: as \ud83d\udc9b-style escapes BigQuery stores each
+    # half as a replacement character.
+    payload = gzip.compress(
+        "\n".join(json.dumps(row, ensure_ascii=False) for row in tagged_rows).encode(
+            "utf-8"
+        )
+    )
 
     def run(autodetect: bool) -> None:
         job_config = bigquery.LoadJobConfig(
