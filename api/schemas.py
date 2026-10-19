@@ -86,11 +86,19 @@ class CampaignScorecard(BaseModel):
 # --- overview ------------------------------------------------------------------
 
 
+class TrendPoint(BaseModel):
+    day: date
+    value: float | None  # None before the first reading
+
+
 class MetricChange(BaseModel):
     value: float | None
     previous: float | None
     change: float | None
     change_pct: float | None
+    # Daily total for the last 90 days, each account's latest reading carried
+    # forward, so a day one account wasn't read doesn't show as a dip
+    trend: list[TrendPoint]
 
 
 class OverviewSummary(BaseModel):

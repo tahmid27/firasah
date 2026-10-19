@@ -939,3 +939,46 @@ def test_old_instagram_posts_get_no_reach_based_engagement_rate(client):
 
     rates = {r["post_id"]: r["engagement_rate"] for r in body["rows"]}
     assert rates == {"new": 0.1, "old": None}
+
+
+def test_overview_summary_totals_accounts_and_carries_readings_forward(client):
+    rows = [
+        {"day": date(2026, 9, 1), "account_id": "ig", "followers": 100.0},
+        {"day": date(2026, 9, 1), "account_id": "tt", "followers": 50.0},
+        {"day": date(2026, 10, 18), "account_id": "ig", "followers": 130.0},
+        {"day": date(2026, 10, 17), "account_id": "tt", "followers": 70.0},
+    ]
+    body = get(
+        client_with({"fct_social_account_stats": [("account_id", rows)]}),
+        "/overview/summary",
+    )
+    followers = body["followers"]
+
+    assert followers["value"] == 200.0  # each account's latest reading
+    assert followers["previous"] == 150.0  # as of 18 Sep: the 1 Sep readings
+    assert followers["change"] == 50.0
+    assert body["compared_with"] == "2026-09-18"
+
+    trend = followers["trend"]
+    assert len(trend) == 90
+    assert trend[-1] == {"day": "2026-10-18", "value": 200.0}
+    # tt read on the 17th, ig not yet: ig's 1 Sep reading is carried forward
+    assert trend[-2] == {"day": "2026-10-17", "value": 170.0}
+    # Before any reading exists the total is unknown, not zero
+    assert trend[0] == {"day": "2026-07-21", "value": None}
+
+
+def test_overview_summary_trend_needs_every_account(client):
+    rows = [
+        {"day": date(2026, 9, 1), "account_id": "ig", "followers": 100.0},
+        {"day": date(2026, 10, 1), "account_id": "tt", "followers": 50.0},
+    ]
+    trend = get(
+        client_with({"fct_social_account_stats": [("account_id", rows)]}),
+        "/overview/summary",
+    )["followers"]["trend"]
+
+    by_day = {p["day"]: p["value"] for p in trend}
+    # Until tt's first reading the total would undercount, so it's unknown
+    assert by_day["2026-09-30"] is None
+    assert by_day["2026-10-01"] == 150.0
