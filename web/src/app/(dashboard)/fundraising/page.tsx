@@ -33,8 +33,8 @@ export default function FundraisingPage({
         fallback={
           <div className="grid gap-4 sm:grid-cols-3">
             <CardSkeleton title="Raised" height="h-12" />
-            <CardSkeleton title="Gifts" height="h-12" />
-            <CardSkeleton title="Average gift" height="h-12" />
+            <CardSkeleton title="Donations" height="h-12" />
+            <CardSkeleton title="Average donation" height="h-12" />
           </div>
         }
       >
@@ -54,7 +54,7 @@ export default function FundraisingPage({
             <CardSkeleton title="Progress against targets" height="h-48" />
           }
         >
-          <TargetsCard />
+          <TargetsCard searchParams={searchParams} />
         </Suspense>
       </div>
       <div id="leaderboard" className="scroll-mt-6">
@@ -69,12 +69,14 @@ export default function FundraisingPage({
       <div className="grid gap-4 lg:grid-cols-2">
         <Suspense
           fallback={
-            <CardSkeleton title="Where gifts came from" height="h-56" />
+            <CardSkeleton title="Where donations came from" height="h-56" />
           }
         >
           <TrafficCard searchParams={searchParams} />
         </Suspense>
-        <Suspense fallback={<CardSkeleton title="Gift sizes" height="h-56" />}>
+        <Suspense
+          fallback={<CardSkeleton title="Donation sizes" height="h-56" />}
+        >
           <GiftSizesCard searchParams={searchParams} />
         </Suspense>
       </div>

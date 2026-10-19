@@ -27,10 +27,11 @@ export function param(
   return Array.isArray(value) ? value[0] : value;
 }
 
-// Weekly bars for short ranges, monthly for longer ones.
-export function intervalFor(range: DateRange): "week" | "month" {
+// Daily bars up to a month, weekly up to a quarter, monthly beyond.
+export function intervalFor(range: DateRange): "day" | "week" | "month" {
   const days =
     (Date.parse(range.end) - Date.parse(range.start)) / 86_400_000 + 1;
+  if (days <= 31) return "day";
   return days <= 92 ? "week" : "month";
 }
 

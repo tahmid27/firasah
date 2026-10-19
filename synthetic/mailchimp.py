@@ -16,7 +16,7 @@ from ingestion.mailchimp_campaigns import (
 from synthetic.batches import Batch
 from synthetic.charities import Charity
 from synthetic.marketing import Email
-from synthetic.rand import rng
+from synthetic.rand import audience_series, rng
 
 API = "https://us14.api.mailchimp.com/3.0"
 
@@ -75,15 +75,32 @@ LIST_LINKS = (
 
 
 def subscriber_series(
-    r: random.Random, start: date, end: date, counts: tuple[int, int]
+    r: random.Random,
+    start: date,
+    end: date,
+    counts: tuple[int, int],
+    emails: list[Email] = (),
 ) -> dict[date, int]:
-    days = (end - start).days or 1
-    return {
-        start + timedelta(days=i): max(
-            1, round(counts[0] * (counts[1] / counts[0]) ** (i / days) + r.gauss(0, 2))
+    """Sign-ups pick up around appeals; each send loses a few unsubscribers
+    that day and the next; Mailchimp cleans dead addresses about monthly."""
+    bumps: dict[date, float] = {}
+    drops: dict[date, float] = {}
+    for e in emails:
+        day = e.send_time.date()
+        if e.kind == "appeal":
+            bumps[day] = bumps.get(day, 0.0) + r.uniform(0.5, 2.5)
+        lost = r.uniform(0.001, 0.004)
+        drops[day] = drops.get(day, 0.0) + lost * 0.7
+        drops[day + timedelta(days=1)] = (
+            drops.get(day + timedelta(days=1), 0.0) + lost * 0.3
         )
-        for i in range(days + 1)
-    }
+    day = start
+    while day <= end:
+        if day.day == 1:
+            clean = day + timedelta(days=r.randint(0, 6))
+            drops[clean] = drops.get(clean, 0.0) + r.uniform(0.001, 0.005)
+        day += timedelta(days=1)
+    return audience_series(r, start, end, counts, bumps, drops)
 
 
 def _report(
@@ -265,7 +282,7 @@ def batches(
 ) -> list[Batch]:
     r = rng(seed, c.org_id, "mailchimp-format")
     list_id, web_id = f"{r.getrandbits(40):010x}", r.randint(100_000, 999_999)
-    subscribers = subscriber_series(r, start, end, c.subscribers)
+    subscribers = subscriber_series(r, start, end, c.subscribers, emails)
     now = datetime.combine(end, time(6), tzinfo=UTC)
     averages = (0.37, 0.03)
 

@@ -7,7 +7,7 @@ from statistics import mean, median
 from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 
 from api.data import Now, Today, Warehouse
 from api.periods import period_start, periods, start_of_day
@@ -141,8 +141,21 @@ def _post(row: dict, now: datetime) -> PostRow:
     )
 
 
-def _all_posts(wh: Warehouse, platform: str | None, now: datetime) -> list[PostRow]:
+def _all_posts(
+    wh: Warehouse,
+    platform: str | None,
+    now: datetime,
+    start: date | None = None,
+    end: date | None = None,
+) -> list[PostRow]:
+    """Posts published in the range (all of them without one)."""
+    if start and end and start > end:
+        raise HTTPException(422, "start must be on or before end")
     filters = [Filter("platform", "=", platform)] if platform else []
+    if start:
+        filters.append(Filter("posted_at", ">=", start_of_day(start)))
+    if end:
+        filters.append(Filter("posted_at", "<", start_of_day(end + timedelta(days=1))))
     rows = wh.fetch(
         "fct_social_posts",
         POST_COLUMNS,
@@ -157,7 +170,7 @@ def _all_posts(wh: Warehouse, platform: str | None, now: datetime) -> list[PostR
 def net_followers(
     wh: Warehouse,
     today: Today,
-    interval: Literal["week", "month"] = "week",
+    interval: Literal["day", "week", "month"] = "week",
     start: date | None = None,
     end: date | None = None,
 ):
@@ -210,8 +223,10 @@ def posts(
         "engagement_rate"
     ),
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    start: date | None = None,
+    end: date | None = None,
 ):
-    rows = _all_posts(wh, platform, now)
+    rows = _all_posts(wh, platform, now, start, end)
     if sort != "posted_at":
         known = [r for r in rows if getattr(r, sort) is not None]
         unknown = [r for r in rows if getattr(r, sort) is None]
@@ -221,10 +236,16 @@ def posts(
 
 
 @router.get("/formats", response_model=Formats)
-def formats(wh: Warehouse, now: Now, platform: Platform | None = None):
+def formats(
+    wh: Warehouse,
+    now: Now,
+    platform: Platform | None = None,
+    start: date | None = None,
+    end: date | None = None,
+):
     """How each format performs: Reel vs image vs carousel vs TikTok video."""
     groups: dict = defaultdict(list)
-    for post in _all_posts(wh, platform, now):
+    for post in _all_posts(wh, platform, now, start, end):
         groups[(post.platform, post.format)].append(post.engagement_rate)
     result = []
     for (name, fmt), rates in groups.items():
@@ -281,11 +302,17 @@ def posting_consistency(
 
 
 @router.get("/best-time", response_model=Heatmap)
-def best_time(wh: Warehouse, now: Now, platform: Platform | None = None):
+def best_time(
+    wh: Warehouse,
+    now: Now,
+    platform: Platform | None = None,
+    start: date | None = None,
+    end: date | None = None,
+):
     """Average engagement rate by day of week and hour posted, in UK time."""
     zone = ZoneInfo(TIMEZONE)
     cells: dict = defaultdict(list)
-    for post in _all_posts(wh, platform, now):
+    for post in _all_posts(wh, platform, now, start, end):
         local = post.posted_at.astimezone(zone)
         cells[(local.isoweekday(), local.hour)].append(post.engagement_rate)
     return Heatmap(

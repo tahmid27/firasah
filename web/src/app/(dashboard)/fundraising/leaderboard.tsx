@@ -85,13 +85,13 @@ export function LeaderboardTable({
               )}
               <th className="py-2 pr-3 text-right font-normal">Raised</th>
               <th className="hidden py-2 pr-3 text-right font-normal sm:table-cell">
-                Gifts
+                Donations
               </th>
               <th className="hidden py-2 pr-3 text-right font-normal md:table-cell">
-                Average gift
+                Average donation
               </th>
               <th className="hidden py-2 text-right font-normal lg:table-cell">
-                Latest gift
+                Latest donation
               </th>
             </tr>
           </thead>

@@ -3,6 +3,8 @@
 // are plain YYYY-MM-DD strings in UK time, the same as the API takes.
 
 export const PRESETS = [
+  { key: "yesterday", label: "Yesterday" },
+  { key: "7d", label: "Last 7 days" },
   { key: "30d", label: "Last 30 days" },
   { key: "90d", label: "Last 90 days" },
   { key: "12m", label: "Last 12 months" },
@@ -60,6 +62,10 @@ function isValidDate(value: string | undefined): value is string {
 
 function presetStart(preset: PresetKey, today: string): string {
   switch (preset) {
+    case "yesterday":
+      return addDays(today, -1);
+    case "7d":
+      return addDays(today, -6);
     case "30d":
       return addDays(today, -29);
     case "90d":
@@ -83,6 +89,7 @@ export function formatDay(date: string, withYear = true): string {
 }
 
 export function rangeLabel(start: string, end: string): string {
+  if (start === end) return formatDay(start);
   const sameYear = start.slice(0, 4) === end.slice(0, 4);
   return `${formatDay(start, !sameYear)} – ${formatDay(end)}`;
 }
@@ -113,7 +120,9 @@ export function resolveRange(params: Params, today: string): DateRange {
     ? (preset as PresetKey)
     : DEFAULT_PRESET;
   const start = presetStart(key, today);
-  return { preset: key, start, end: today, label: rangeLabel(start, today) };
+  // Yesterday is one whole day; today isn't complete until the next refresh
+  const end = key === "yesterday" ? start : today;
+  return { preset: key, start, end, label: rangeLabel(start, end) };
 }
 
 // Query string for a range, keeping any other params already in the URL.

@@ -8,6 +8,8 @@ type Props = {
   title: string;
   description: string;
   searchParams?: SearchParams;
+  // Extra filters shown before the date range (e.g. platform on Social)
+  controls?: ReactNode;
   children: ReactNode;
 };
 
@@ -17,6 +19,7 @@ export function PageShell({
   title,
   description,
   searchParams,
+  controls,
   children,
 }: Props) {
   return (
@@ -26,12 +29,19 @@ export function PageShell({
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-ink-2">{description}</p>
         </div>
-        {searchParams && (
-          <Suspense
-            fallback={<div className="h-9 w-56 rounded-md bg-surface-sunken" />}
-          >
-            <RangeControl searchParams={searchParams} />
-          </Suspense>
+        {(controls || searchParams) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {controls}
+            {searchParams && (
+              <Suspense
+                fallback={
+                  <div className="h-9 w-56 rounded-md bg-surface-sunken" />
+                }
+              >
+                <RangeControl searchParams={searchParams} />
+              </Suspense>
+            )}
+          </div>
         )}
       </header>
       {children}

@@ -460,6 +460,9 @@ def test_campaign_scorecard(client):
         ("/social/followers-over-time", {"start": "2024-01-01", "end": "2026-10-18"}),
         ("/fundraising/fundraisers", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/fundraising/projects", {"start": "2026-05-01", "end": "2026-04-01"}),
+        ("/social/posts", {"start": "2026-05-01", "end": "2026-04-01"}),
+        ("/social/formats", {"start": "2026-05-01", "end": "2026-04-01"}),
+        ("/social/best-time", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/fundraising/fundraisers", {"limit": 0}),
         ("/fundraising/fundraisers", {"limit": 201}),
         ("/fundraising/fundraisers", {"project": "x" * 201}),
@@ -992,4 +995,34 @@ def test_projects_date_range(client, executor):
     assert values == [
         datetime(2026, 10, 1, tzinfo=UTC),
         datetime(2026, 10, 19, tzinfo=UTC),
+    ]
+
+
+@pytest.mark.parametrize(
+    "path", ["/social/posts", "/social/formats", "/social/best-time"]
+)
+def test_post_endpoints_take_a_date_range(client, executor, path):
+    get(client, path, start="2026-10-01", end="2026-10-18")
+    values = [p.value for p in executor.calls[0]["params"] if p.type_ == "TIMESTAMP"]
+
+    assert values == [
+        datetime(2026, 10, 1, tzinfo=UTC),
+        datetime(2026, 10, 19, tzinfo=UTC),
+    ]
+
+
+def test_net_followers_by_day(client):
+    body = get(
+        client,
+        "/social/net-followers",
+        interval="day",
+        start="2026-10-16",
+        end="2026-10-18",
+    )
+
+    assert body["interval"] == "day"
+    assert [p["period"] for p in body["data"]] == [
+        "2026-10-16",
+        "2026-10-17",
+        "2026-10-18",
     ]

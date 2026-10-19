@@ -1309,7 +1309,7 @@ export interface operations {
     income_over_time_fundraising_income_over_time_get: {
         parameters: {
             query?: {
-                interval?: "week" | "month";
+                interval?: "day" | "week" | "month";
                 start?: string | null;
                 end?: string | null;
             };
@@ -1653,7 +1653,7 @@ export interface operations {
     net_followers_social_net_followers_get: {
         parameters: {
             query?: {
-                interval?: "week" | "month";
+                interval?: "day" | "week" | "month";
                 start?: string | null;
                 end?: string | null;
             };
@@ -1689,6 +1689,8 @@ export interface operations {
                 platform?: ("instagram" | "tiktok") | null;
                 sort?: "engagement_rate" | "reach" | "views" | "likes" | "posted_at";
                 limit?: number;
+                start?: string | null;
+                end?: string | null;
             };
             header?: never;
             path?: never;
@@ -1720,6 +1722,8 @@ export interface operations {
         parameters: {
             query?: {
                 platform?: ("instagram" | "tiktok") | null;
+                start?: string | null;
+                end?: string | null;
             };
             header?: never;
             path?: never;
@@ -1782,6 +1786,8 @@ export interface operations {
         parameters: {
             query?: {
                 platform?: ("instagram" | "tiktok") | null;
+                start?: string | null;
+                end?: string | null;
             };
             header?: never;
             path?: never;

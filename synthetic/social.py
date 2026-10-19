@@ -14,7 +14,7 @@ from ingestion.instagram_posts import (
 from synthetic.batches import Batch
 from synthetic.charities import Charity
 from synthetic.marketing import Post
-from synthetic.rand import rng
+from synthetic.rand import audience_series, rng
 
 AGES = ("13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "65+")
 
@@ -26,22 +26,20 @@ def _pull_time(day: date) -> datetime:
 def follower_series(
     r: random.Random, start: date, end: date, counts: tuple[int, int], posts: list[Post]
 ) -> dict[date, int]:
-    """Smooth growth from counts[0] to counts[1], small daily wobble, and a
-    step up after the rare post that took off."""
-    days = (end - start).days or 1
-    boosts: dict[date, float] = {}
-    for p in posts:
-        if p.effect > 0.2:
-            boosts[p.posted_at.date()] = (
-                boosts.get(p.posted_at.date(), 0) + p.effect * 0.01
-            )
-    series, extra = {}, 0.0
-    for i in range(days + 1):
-        day = start + timedelta(days=i)
-        trend = counts[0] * (counts[1] / counts[0]) ** (i / days)
-        extra += boosts.get(day, 0) * trend
-        series[day] = max(1, round(trend + extra + r.gauss(0, trend * 0.002)))
-    return series
+    """Uneven growth with a jump after the rare post that took off, small
+    unfollow dips after a run of quiet days, and the occasional purge of
+    inactive accounts by the platform."""
+    bumps = {p.posted_at.date(): p.effect * 6 for p in posts if p.effect > 0.2}
+    drops: dict[date, float] = {}
+    day = start + timedelta(days=r.randint(30, 120))
+    while day <= end:
+        drops[day] = r.uniform(0.003, 0.012)  # platform purge
+        day += timedelta(days=r.randint(60, 150))
+    for i in range((end - start).days):
+        if r.random() < 0.04:
+            day = start + timedelta(days=i)
+            drops[day] = drops.get(day, 0.0) + r.uniform(0.0005, 0.002)
+    return audience_series(r, start, end, counts, bumps, drops)
 
 
 def _post_metrics(r: random.Random, p: Post, followers: int, now: datetime) -> dict:
