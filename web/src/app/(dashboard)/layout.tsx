@@ -4,15 +4,19 @@ import { Brand } from "@/components/brand";
 import { MobileNav } from "@/components/mobile-nav";
 import { NavLinks } from "@/components/nav-links";
 import { OrgBadge, OrgBadgeFallback } from "@/components/org-badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Not an auth check: the proxy redirects logged-out visitors, and every data
 // call is checked by the API. The charity name streams in behind Suspense so
 // the rest of the shell isn't held up by it.
 export default function DashboardLayout({ children }: LayoutProps<"/">) {
-  const orgBadge = (
-    <Suspense fallback={<OrgBadgeFallback />}>
-      <OrgBadge />
-    </Suspense>
+  const footer = (
+    <div className="flex flex-col gap-3">
+      <ThemeToggle />
+      <Suspense fallback={<OrgBadgeFallback />}>
+        <OrgBadge />
+      </Suspense>
+    </div>
   );
 
   return (
@@ -25,10 +29,10 @@ export default function DashboardLayout({ children }: LayoutProps<"/">) {
           <NavLinks />
         </nav>
         <div className="mt-auto border-t border-hairline px-3 pt-4">
-          {orgBadge}
+          {footer}
         </div>
       </aside>
-      <MobileNav footer={orgBadge} />
+      <MobileNav footer={footer} />
       <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
         {children}
       </main>
