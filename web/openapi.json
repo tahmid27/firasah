@@ -1828,6 +1828,7 @@
           "appeals"
         ],
         "summary": "Timeline",
+        "description": "Donations per day (or week) with every post and email as an event.",
         "operationId": "timeline_appeals_timeline_get",
         "security": [
           {
@@ -1867,6 +1868,20 @@
                 }
               ],
               "title": "End"
+            }
+          },
+          {
+            "name": "interval",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "day",
+                "week"
+              ],
+              "type": "string",
+              "default": "day",
+              "title": "Interval"
             }
           }
         ],
@@ -1973,7 +1988,7 @@
           "appeals"
         ],
         "summary": "Email Lift",
-        "description": "Donations on the day of each email and the day after, against a typical\ntwo days in the weeks before it. A pattern to look at, not proof the\nemail caused the donations.",
+        "description": "Donations on the day of each email and the day after, against a typical\ntwo days in the weeks before it. A pattern to look at, not proof the\nemail caused the donations. Newest campaigns first; only those sent in the\nrange when one is given.",
         "operationId": "email_lift_appeals_email_lift_get",
         "security": [
           {
@@ -2003,6 +2018,40 @@
               "minimum": 1,
               "default": 20,
               "title": "Limit"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
             }
           }
         ],

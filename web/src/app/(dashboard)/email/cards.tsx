@@ -91,6 +91,7 @@ export async function EmailTotals({ searchParams }: Props) {
     },
     {
       title: "Unsubscribes",
+      lowerIsBetter: true,
       value: count(now.unsubscribes),
       pct: change(now.unsubscribes, then.unsubscribes),
       was: count(then.unsubscribes),
@@ -105,7 +106,11 @@ export async function EmailTotals({ searchParams }: Props) {
               <p className="text-3xl font-semibold tracking-tight">
                 {tile.value}
               </p>
-              <Delta pct={tile.pct} label={`${vs} (${tile.was})`} />
+              <Delta
+                pct={tile.pct}
+                label={`${vs} (${tile.was})`}
+                lowerIsBetter={"lowerIsBetter" in tile && tile.lowerIsBetter}
+              />
             </div>
           </Card>
         ))}
@@ -363,7 +368,7 @@ export async function ListHealthCard({ searchParams }: Props) {
   const measures = [
     { key: "unsubscribed", title: "Unsubscribed" },
     { key: "cleaned", title: "Cleaned (dead addresses)" },
-    { key: "bounces", title: "Bounced" },
+    { key: "bounces", title: "Bounces (per send)" },
   ];
   return (
     <Card
@@ -386,8 +391,11 @@ export async function ListHealthCard({ searchParams }: Props) {
         ))}
       </div>
       <p className="text-xs text-muted">
-        Mailchimp removes (&quot;cleans&quot;) addresses that keep bouncing. A
-        rising bounce count can mean deliverability problems.
+        Bounces are emails that couldn&apos;t be delivered, counted per send:
+        hard bounces (the address doesn&apos;t exist) and soft bounces (a
+        temporary problem, like a full inbox). Mailchimp &quot;cleans&quot; an
+        address, removing it from the list, after a hard bounce or repeated soft
+        bounces. Rising bounces can mean a deliverability problem.
       </p>
     </Card>
   );
