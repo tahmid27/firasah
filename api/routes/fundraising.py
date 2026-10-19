@@ -3,11 +3,11 @@
 from datetime import date, timedelta
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
 from api.data import Today, Warehouse
 from api.periods import months_back, next_period, period_start, periods, start_of_day
-from api.routes.common import LABELS, check_range, iso_weekday, money
+from api.routes.common import LABELS, check_range, iso_weekday, money, optional_range
 from api.schemas import (
     FundraiserLeaderboard,
     FundraiserRow,
@@ -149,7 +149,7 @@ def fundraisers(
     end: date | None = None,
 ):
     """All time unless a range is given."""
-    filters = [GBP, *_optional_range(start, end)]
+    filters = [GBP, *optional_range("donation_date", start, end)]
     if project:
         filters.append(Filter("project_name", "=", project))
     rows = wh.fetch(
@@ -188,20 +188,6 @@ GIFT_SIZE_EDGES = (10, 25, 50, 100, 250)
 GIFT_AID_RATE = 0.25
 
 
-def _optional_range(start: date | None, end: date | None) -> list[Filter]:
-    """Filters for an optional range: all time when neither end is given."""
-    if start and end and start > end:
-        raise HTTPException(422, "start must be on or before end")
-    filters = []
-    if start:
-        filters.append(Filter("donation_date", ">=", start_of_day(start)))
-    if end:
-        filters.append(
-            Filter("donation_date", "<", start_of_day(end + timedelta(days=1)))
-        )
-    return filters
-
-
 def _date_range(start: date, end: date) -> list[Filter]:
     return [
         Filter("donation_date", ">=", start_of_day(start)),
@@ -229,7 +215,7 @@ def projects(wh: Warehouse, start: date | None = None, end: date | None = None):
             Agg("count_distinct", "fundraiser_name", "fundraisers"),
             Agg("max", "donation_date", "last_donation_at"),
         ],
-        filters=[GBP, *_optional_range(start, end)],
+        filters=[GBP, *optional_range("donation_date", start, end)],
     )
     combined: dict = {}
     for row in rows:

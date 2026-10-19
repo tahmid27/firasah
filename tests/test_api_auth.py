@@ -198,3 +198,36 @@ def test_supabase_lookup_errors_propagate():
 
     with pytest.raises(httpx.HTTPStatusError):
         lookup(CurrentUser(user_id=USER_A, token="t"))
+
+
+def test_supabase_lookup_retries_once_on_a_dropped_connection():
+    attempts = []
+
+    def handler(request):
+        attempts.append(request)
+        if len(attempts) == 1:
+            raise httpx.RemoteProtocolError("Server disconnected", request=request)
+        return httpx.Response(200, json=[{"org_id": "charity_a", "role": "admin"}])
+
+    lookup = SupabaseMembershipLookup(
+        SETTINGS, client=httpx.Client(transport=httpx.MockTransport(handler))
+    )
+
+    assert lookup(CurrentUser(user_id=USER_A, token="t"))[0] == "charity_a"
+    assert len(attempts) == 2
+
+
+def test_supabase_lookup_gives_up_after_one_retry():
+    attempts = []
+
+    def handler(request):
+        attempts.append(request)
+        raise httpx.ConnectError("down", request=request)
+
+    lookup = SupabaseMembershipLookup(
+        SETTINGS, client=httpx.Client(transport=httpx.MockTransport(handler))
+    )
+
+    with pytest.raises(httpx.TransportError):
+        lookup(CurrentUser(user_id=USER_A, token="t"))
+    assert len(attempts) == 2
