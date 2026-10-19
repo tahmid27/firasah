@@ -2819,6 +2819,13 @@
               }
             ],
             "title": "Change Pct"
+          },
+          "trend": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPoint"
+            },
+            "type": "array",
+            "title": "Trend"
           }
         },
         "type": "object",
@@ -2826,7 +2833,8 @@
           "value",
           "previous",
           "change",
-          "change_pct"
+          "change_pct",
+          "trend"
         ],
         "title": "MetricChange"
       },
@@ -3560,6 +3568,32 @@
           "rows"
         ],
         "title": "TrafficSources"
+      },
+      "TrendPoint": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "value"
+        ],
+        "title": "TrendPoint"
       },
       "ValidationError": {
         "properties": {

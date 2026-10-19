@@ -8,13 +8,22 @@ from fastapi import APIRouter
 from api.data import Now, Today, Warehouse
 from api.periods import start_of_day
 from api.routes.common import LABELS, SOURCES, latest_total, pct_change
-from api.schemas import DataHealth, MetricChange, OverviewSummary, SourceStatus
+from api.schemas import (
+    DataHealth,
+    MetricChange,
+    OverviewSummary,
+    SourceStatus,
+    TrendPoint,
+)
 from api.warehouse import Agg, Bucket, Filter
 
 router = APIRouter(tags=["overview"])
 
 COMPARE_DAYS = 30
-LOOKBACK_DAYS = 60
+TREND_DAYS = 90
+# Extra history before the trend starts, so its first days can carry an
+# earlier reading forward
+LOOKBACK_DAYS = TREND_DAYS + 30
 
 
 def _readings(rows, key: str, value: str) -> dict[str, list[tuple]]:
@@ -24,14 +33,19 @@ def _readings(rows, key: str, value: str) -> dict[str, list[tuple]]:
     return dict(readings)
 
 
-def _metric(readings: dict[str, list[tuple]], compare_date) -> MetricChange:
+def _metric(readings: dict[str, list[tuple]], today, compare_date) -> MetricChange:
     now = latest_total(readings)
     then = latest_total(readings, on_or_before=compare_date)
+    days = [today - timedelta(days=n) for n in range(TREND_DAYS - 1, -1, -1)]
     return MetricChange(
         value=now,
         previous=then,
         change=None if now is None or then is None else now - then,
         change_pct=pct_change(now, then),
+        trend=[
+            TrendPoint(day=day, value=latest_total(readings, on_or_before=day))
+            for day in days
+        ],
     )
 
 
@@ -62,10 +76,10 @@ def overview_summary(wh: Warehouse, today: Today):
     )
     return OverviewSummary(
         followers=_metric(
-            _readings(followers, "account_id", "followers"), compare_date
+            _readings(followers, "account_id", "followers"), today, compare_date
         ),
         email_subscribers=_metric(
-            _readings(subscribers, "list_id", "members"), compare_date
+            _readings(subscribers, "list_id", "members"), today, compare_date
         ),
         compared_with=compare_date,
     )

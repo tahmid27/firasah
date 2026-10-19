@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { Card, CardError, attempt } from "@/components/card";
 import { MonthlyBars } from "@/components/charts/monthly-bars";
+import { Sparkline } from "@/components/charts/sparkline";
 import { Delta } from "@/components/delta";
 import { HealthBadge } from "@/components/health-badge";
 import {
@@ -103,6 +104,15 @@ export async function AudienceTile({
           />
         </div>
       )}
+      {m.trend.filter((p) => p.value !== null).length > 1 && (
+        <div className="mt-auto">
+          <Sparkline
+            data={m.trend.map((p) => ({ day: String(p.day), value: p.value }))}
+            label={`${title}, last 90 days`}
+          />
+          <p className="mt-1 text-xs text-muted">Last 90 days</p>
+        </div>
+      )}
     </Card>
   );
 }
@@ -124,7 +134,9 @@ export async function IncomeCard() {
   }));
   const labels = result.series.map((s) => s.label);
   const source =
-    labels.length > 1 ? `${labels.join(" and ")} combined` : `From ${labels[0]}`;
+    labels.length > 1
+      ? `${labels.join(" and ")} combined`
+      : `From ${labels[0]}`;
   return (
     <Card
       title={title}

@@ -912,6 +912,8 @@ export interface components {
             change: number | null;
             /** Change Pct */
             change_pct: number | null;
+            /** Trend */
+            trend: components["schemas"]["TrendPoint"][];
         };
         /** MonthTotals */
         MonthTotals: {
@@ -1150,6 +1152,16 @@ export interface components {
             currency: "GBP";
             /** Rows */
             rows: components["schemas"]["TrafficSourceRow"][];
+        };
+        /** TrendPoint */
+        TrendPoint: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Value */
+            value: number | null;
         };
         /** ValidationError */
         ValidationError: {
