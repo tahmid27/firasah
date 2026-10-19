@@ -8,8 +8,9 @@ export function Delta({ pct, label }: { pct: number | null; label: string }) {
   if (pct === null) {
     return <p className="text-xs text-muted">No comparison yet · {label}</p>;
   }
-  const up = pct > 0;
-  const flat = pct === 0;
+  // Anything that would display as 0.0% is shown as no change
+  const flat = Math.abs(pct) < 0.05;
+  const up = !flat && pct > 0;
   const Icon = flat ? Minus : up ? ArrowUpRight : ArrowDownRight;
   return (
     <p className="flex flex-wrap items-center gap-x-1 text-xs text-muted">

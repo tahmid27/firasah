@@ -61,3 +61,18 @@ export const getOverviewSummary = cache(async () => {
   const api = await apiClient();
   return unwrap(await api.GET("/overview/summary"));
 });
+
+// Which sources are connected, so cards can explain what doesn't apply.
+export const getDataHealth = cache(async () => {
+  const api = await apiClient();
+  return unwrap(await api.GET("/data-health/sources"));
+});
+
+export async function connectedSources(): Promise<Set<string>> {
+  const health = await getDataHealth();
+  return new Set(
+    health.sources
+      .filter((s) => s.last_data_at || s.last_run_at)
+      .map((s) => s.source),
+  );
+}

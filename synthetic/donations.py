@@ -277,6 +277,17 @@ def donations_for(
         0, 99_999
     )
     nightly_donors: list[Donor] = []
+    # A supporter's own page (a bake sale, a 10K) runs until it has raised
+    # roughly its target, then stops collecting. Its own random stream, so
+    # caps don't shift anything else that's generated.
+    cap_r = rng(seed, c.org_id, platform, "page-caps")
+    caps = {
+        f: f.target * cap_r.lognormvariate(0.1, 0.3)
+        for project in c.projects[platform]
+        for f in project.fundraisers
+        if f.target and f.owner not in (None, c.name)
+    }
+    raised: dict[Fundraiser, float] = {}
     for day, multiplier in zip(days, multipliers, strict=True):
         noise = r.gammavariate(6, 1 / 6)
         expected = base * multiplier * noise * (1 + lift.get(day, 0.0))
@@ -286,9 +297,20 @@ def donations_for(
             for project in c.projects[platform]
             for f in project.fundraisers
         ]
-        active = [a for a in active if a[2] > 0]
+
+        def open_(f: Fundraiser) -> bool:
+            return f not in caps or raised.get(f, 0.0) < caps[f]
+
+        active = [a for a in active if a[2] > 0 and open_(a[1])]
         if not active:
-            active = [(p, f, 1.0) for p in c.projects[platform] for f in p.fundraisers]
+            active = [
+                (p, f, 1.0)
+                for p in c.projects[platform]
+                for f in p.fundraisers
+                if open_(f)
+            ]
+        if not active:
+            continue
         if (
             calendar.in_last_ten_nights(day)
             and platform == "launchgood"
@@ -314,6 +336,8 @@ def donations_for(
                 platform == "launchgood" and not nightly and r.random() < zakat_chance
             )
             hour = 22 if nightly else _hour(r, day)
+            amount = _amount(r, c, fundraiser, is_zakat, nightly)
+            raised[fundraiser] = raised.get(fundraiser, 0.0) + amount
             donations.append(
                 Donation(
                     donation_id=next_id,
@@ -321,7 +345,7 @@ def donations_for(
                     project=project,
                     fundraiser=fundraiser,
                     at=uk_time_to_utc(day, hour, r.randint(0, 59), r.randint(0, 59)),
-                    amount=_amount(r, c, fundraiser, is_zakat, nightly),
+                    amount=amount,
                     currency="GBP",
                     donor=donor,
                     is_gift_aid=donor.uk_taxpayer

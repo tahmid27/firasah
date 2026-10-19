@@ -1,11 +1,8 @@
-import { connection } from "next/server";
 import { Suspense, type ReactNode } from "react";
 
-import { londonToday, resolveRange } from "@/lib/date-range";
+import { rangeFrom, type SearchParams } from "@/lib/range-server";
 
 import { DateRangePicker } from "./date-range-picker";
-
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 type Props = {
   title: string;
@@ -43,10 +40,7 @@ export function PageShell({
 }
 
 async function RangeControl({ searchParams }: { searchParams: SearchParams }) {
-  await connection(); // "today" must be worked out per request, not at build
-  const params = await searchParams;
-  const today = londonToday();
-  const range = resolveRange(params, today);
+  const { today, ...range } = await rangeFrom(searchParams);
   return (
     <DateRangePicker
       key={`${range.start}|${range.end}`}

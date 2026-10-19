@@ -23,6 +23,7 @@ import {
   signed,
   ukDate,
 } from "@/lib/format";
+import { platformName } from "@/lib/platforms";
 import { healthOf } from "@/lib/source-status";
 
 // O1
@@ -362,12 +363,4 @@ function SeeMore({ href }: { href: string }) {
       View more
     </Link>
   );
-}
-
-function platformName(platform: string) {
-  return platform === "tiktok"
-    ? "TikTok"
-    : platform === "instagram"
-      ? "Instagram"
-      : platform;
 }
