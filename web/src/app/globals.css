@@ -16,6 +16,18 @@
   --accent-ink: #ffffff;
   --accent-soft: #e3f1ed;
   --danger: #b42318;
+  /* Charts: categorical slots from the validated dataviz palette, fixed order */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  /* Status: reserved for state, always shown with an icon and label */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+  --delta-up: #006300;
+  --delta-down: #b42318;
 }
 
 /* Dark when the OS asks for it, unless the user picked light in the toggle;
@@ -35,6 +47,16 @@
     --accent-ink: #0b0b0b;
     --accent-soft: #15302a;
     --danger: #f97066;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-critical: #d03b3b;
+    --delta-up: #0ca30c;
+    --delta-down: #f97066;
   }
 }
 
@@ -52,6 +74,16 @@
   --accent-ink: #0b0b0b;
   --accent-soft: #15302a;
   --danger: #f97066;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+  --delta-up: #0ca30c;
+  --delta-down: #f97066;
 }
 
 @theme inline {
@@ -67,6 +99,14 @@
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-status-good: var(--status-good);
+  --color-status-warning: var(--status-warning);
+  --color-status-critical: var(--status-critical);
+  --color-delta-up: var(--delta-up);
+  --color-delta-down: var(--delta-down);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

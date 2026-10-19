@@ -175,6 +175,7 @@
           "fundraising"
         ],
         "summary": "Fundraisers",
+        "description": "All time unless a range is given.",
         "operationId": "fundraisers_fundraising_fundraisers_get",
         "security": [
           {
@@ -209,6 +210,40 @@
               "minimum": 1,
               "default": 50,
               "title": "Limit"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
             }
           }
         ],
@@ -2371,6 +2406,9 @@
           "last_month": {
             "$ref": "#/components/schemas/MonthTotals"
           },
+          "last_month_to_date": {
+            "$ref": "#/components/schemas/MonthTotals"
+          },
           "raised_change_pct": {
             "anyOf": [
               {
@@ -2392,6 +2430,7 @@
           "currency",
           "this_month",
           "last_month",
+          "last_month_to_date",
           "raised_change_pct",
           "excluded_non_gbp_donations"
         ],
@@ -2798,6 +2837,11 @@
             "format": "date",
             "title": "Month Start"
           },
+          "through": {
+            "type": "string",
+            "format": "date",
+            "title": "Through"
+          },
           "raised": {
             "type": "number",
             "title": "Raised"
@@ -2821,6 +2865,7 @@
         "type": "object",
         "required": [
           "month_start",
+          "through",
           "raised",
           "donations",
           "average_gift"

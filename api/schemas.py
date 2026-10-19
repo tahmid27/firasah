@@ -32,6 +32,7 @@ class TimeSeriesResponse(BaseModel):
 
 class MonthTotals(BaseModel):
     month_start: date
+    through: date  # last day counted (today, for the current month)
     raised: float
     donations: int
     average_gift: float | None
@@ -41,7 +42,10 @@ class FundraisingSummary(BaseModel):
     currency: Literal["GBP"]
     this_month: MonthTotals
     last_month: MonthTotals
-    raised_change_pct: float | None
+    # The same days of last month as this month has had so far, so a part
+    # month is never compared with a whole one
+    last_month_to_date: MonthTotals
+    raised_change_pct: float | None  # this month vs last_month_to_date
     excluded_non_gbp_donations: int
 
 

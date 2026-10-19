@@ -37,6 +37,10 @@ def org_data(tag: str, amount: float) -> dict:
         "fct_donations": [
             ("currency_code != @", [{"donations": 1}]),
             (
+                "select sum(amount) as raised, count(*) as donations",
+                [{"raised": 1.2 * amount, "donations": 1}],
+            ),
+            (
                 "as period, sum(amount) as raised, count(*) as donations",
                 [
                     {"period": OCT, "raised": 3 * amount, "donations": 3},
@@ -302,30 +306,61 @@ def test_summary(client):
     assert body["currency"] == "GBP"
     assert body["this_month"] == {
         "month_start": "2026-10-01",
+        "through": "2026-10-18",
         "raised": 300.0,
         "donations": 3,
         "average_gift": 100.0,
     }
     assert body["last_month"]["raised"] == 150.0
-    assert body["raised_change_pct"] == 100.0
+    assert body["last_month"]["through"] == "2026-09-30"
+    assert body["last_month_to_date"]["through"] == "2026-09-18"
+    assert body["last_month_to_date"]["raised"] == 120.0
+    # Compared with the same days of September, not all of it
+    assert body["raised_change_pct"] == 150.0
     assert body["excluded_non_gbp_donations"] == 1
 
 
 def test_summary_with_no_previous_month_has_no_change_pct(client, executor):
-    executor.data_by_org["charity_a"]["fct_donations"][1] = (
-        "as period, sum(amount) as raised, count(*) as donations",
-        [{"period": OCT, "raised": 50.0, "donations": 1}],
-    )
+    executor.data_by_org["charity_a"]["fct_donations"][1:3] = [
+        ("select sum(amount) as raised, count(*) as donations", []),
+        (
+            "as period, sum(amount) as raised, count(*) as donations",
+            [{"period": OCT, "raised": 50.0, "donations": 1}],
+        ),
+    ]
 
     body = get(client, "/fundraising/summary")
 
     assert body["last_month"] == {
         "month_start": "2026-09-01",
+        "through": "2026-09-30",
         "raised": 0.0,
         "donations": 0,
         "average_gift": None,
     }
+    assert body["last_month_to_date"]["raised"] == 0.0
     assert body["raised_change_pct"] is None
+
+
+def test_summary_compares_the_same_days_of_last_month(client, executor):
+    get(client, "/fundraising/summary")
+    to_date = next(
+        c for c in executor.calls if "select sum(amount) as raised" in c["sql"]
+    )
+    values = [p.value for p in to_date["params"] if p.type_ == "TIMESTAMP"]
+
+    assert values == [
+        datetime(2026, 9, 1, tzinfo=UTC),
+        datetime(2026, 9, 19, tzinfo=UTC),
+    ]
+
+
+def test_summary_on_the_31st_compares_with_the_whole_shorter_month(client):
+    main.app.dependency_overrides[get_today] = lambda: date(2026, 10, 31)
+
+    body = get(client, "/fundraising/summary")
+
+    assert body["last_month_to_date"]["through"] == "2026-09-30"
 
 
 def test_summary_only_sums_gbp(client, executor):
@@ -394,6 +429,22 @@ def test_fundraiser_leaderboard(client, executor):
     assert "order by raised desc limit 50" in sql
 
 
+def test_fundraiser_leaderboard_date_range(client, executor):
+    get(client, "/fundraising/fundraisers", start="2026-10-01", end="2026-10-18")
+    values = [p.value for p in executor.calls[0]["params"] if p.type_ == "TIMESTAMP"]
+
+    assert values == [
+        datetime(2026, 10, 1, tzinfo=UTC),
+        datetime(2026, 10, 19, tzinfo=UTC),
+    ]
+
+
+def test_fundraiser_leaderboard_is_all_time_without_a_range(client, executor):
+    get(client, "/fundraising/fundraisers")
+
+    assert not [p for p in executor.calls[0]["params"] if p.type_ == "TIMESTAMP"]
+
+
 def test_campaign_scorecard(client):
     row = get(client, "/email/campaigns")["rows"][0]
 
@@ -407,6 +458,7 @@ def test_campaign_scorecard(client):
         ("/fundraising/income-over-time", {"interval": "year"}),
         ("/fundraising/income-over-time", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/social/followers-over-time", {"start": "2024-01-01", "end": "2026-10-18"}),
+        ("/fundraising/fundraisers", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/fundraising/fundraisers", {"limit": 0}),
         ("/fundraising/fundraisers", {"limit": 201}),
         ("/fundraising/fundraisers", {"project": "x" * 201}),

@@ -3,7 +3,7 @@
 from datetime import date, timedelta
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 
 from api.data import Today, Warehouse
 from api.periods import months_back, next_period, period_start, periods, start_of_day
@@ -58,19 +58,28 @@ def summary(wh: Warehouse, today: Today):
         ],
     )
     by_month = {row["period"]: row for row in rows}
+    last_month_end = this_month - timedelta(days=1)
+    same_day = last_month.replace(day=min(today.day, last_month_end.day))
+    to_date = wh.fetch(
+        "fct_donations",
+        [Agg("sum", "amount", "raised"), Agg("count", "*", "donations")],
+        filters=[GBP, *_date_range(last_month, same_day)],
+    )
 
-    def totals(month: date) -> MonthTotals:
-        row = by_month.get(month, {})
+    def totals(month: date, through: date, row: dict) -> MonthTotals:
         raised = money(row.get("raised"))
         donations = int(row.get("donations") or 0)
         return MonthTotals(
             month_start=month,
+            through=through,
             raised=raised,
             donations=donations,
             average_gift=round(raised / donations, 2) if donations else None,
         )
 
-    current, previous = totals(this_month), totals(last_month)
+    current = totals(this_month, today, by_month.get(this_month, {}))
+    previous = totals(last_month, last_month_end, by_month.get(last_month, {}))
+    comparable = totals(last_month, same_day, to_date[0] if to_date else {})
     excluded = wh.fetch(
         "fct_donations",
         [Agg("count", "*", "donations")],
@@ -80,9 +89,10 @@ def summary(wh: Warehouse, today: Today):
         currency="GBP",
         this_month=current,
         last_month=previous,
+        last_month_to_date=comparable,
         raised_change_pct=(
-            round((current.raised - previous.raised) / previous.raised * 100, 1)
-            if previous.raised
+            round((current.raised - comparable.raised) / comparable.raised * 100, 1)
+            if comparable.raised
             else None
         ),
         excluded_non_gbp_donations=int(excluded[0]["donations"]) if excluded else 0,
@@ -135,8 +145,19 @@ def fundraisers(
     wh: Warehouse,
     project: Annotated[str | None, Query(max_length=200)] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    start: date | None = None,
+    end: date | None = None,
 ):
+    """All time unless a range is given."""
+    if start and end and start > end:
+        raise HTTPException(422, "start must be on or before end")
     filters = [GBP]
+    if start:
+        filters.append(Filter("donation_date", ">=", start_of_day(start)))
+    if end:
+        filters.append(
+            Filter("donation_date", "<", start_of_day(end + timedelta(days=1)))
+        )
     if project:
         filters.append(Filter("project_name", "=", project))
     rows = wh.fetch(
