@@ -83,6 +83,16 @@ uv run python -m ingestion.mailchimp_campaigns
 uv run dbt build --project-dir dbt --profiles-dir ~/.dbt
 ```
 
+Dashboard (Next.js, in `web/`). It needs the API running; the Next.js server calls the API for the user, the browser never does:
+
+```bash
+uv run uvicorn main:app --port 8000      # API (BIGQUERY_DATASET=firasah_synthetic for demo data)
+cd web && npm ci
+cp .env.example .env.local               # Supabase URL + anon key, API URL
+npm run dev                              # http://localhost:3000
+npm run gen:api                          # regenerate TypeScript types after an API change
+```
+
 Checks (the same ones CI runs on every push, see `.github/workflows/ci.yml`):
 
 ```bash
@@ -90,6 +100,7 @@ uv run ruff check .          # lint
 uv run ruff format --check . # formatting
 uv run pytest                # unit tests: retries, rate-limit parsing, .env rewriting, type coercion
 uv run dbt parse --project-dir dbt --profiles-dir ci   # dbt project compiles, no warehouse needed
+cd web && npm run lint && npm run typecheck && npm run build   # frontend
 ```
 
 CI deliberately needs no secrets: unit tests use a fake HTTP transport instead of real APIs, and `dbt parse` never connects to BigQuery. Running the full `dbt build` in CI is the next step (it needs a keyless GCP login via Workload Identity Federation).
@@ -104,14 +115,18 @@ tests/        pytest unit tests for the shared ingestion helpers
 ci/           placeholder dbt profile used by CI
 dbt/          staging, snapshots, intermediate, marts, tests and docs
 scripts/      one-off auth helpers (token exchanges), not part of the pipeline
-main.py       FastAPI app (health check only so far)
+api/          FastAPI auth, tenancy, query helper and dashboard endpoints
+main.py       FastAPI app entry point
+web/          Next.js dashboard (Supabase login, server-side API calls)
+synthetic/    generator for three fake charities' raw data
 CLAUDE.md     working notes and decision log, with dates and reasoning
 ```
 
 ## Status
 
 - **Done:** ingestion for all five sources, the modelling layers, dbt tests and docs, scheduled refresh, unit tests and CI.
-- **Next:** FastAPI layer with per-charity data isolation, then the dashboard (Next.js + Recharts).
+- **Done:** FastAPI layer with per-charity data isolation (28 endpoints), synthetic multi-charity data.
+- **In progress:** the dashboard (Next.js + Recharts). Login works; pages are next.
 - **Later:** billing, deployment, and an agent layer for weekly reports.
 - **Known limitations:** single-charity today; no currency conversion (test data is all GBP); LaunchGood refunds aren't detected yet; growth charts only have history from the first pull onwards; scheduling runs locally until deployment.
 
