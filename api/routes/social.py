@@ -7,11 +7,11 @@ from statistics import mean, median
 from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
 from api.data import Now, Today, Warehouse
 from api.periods import period_start, periods, start_of_day
-from api.routes.common import LABELS, check_range
+from api.routes.common import LABELS, check_range, optional_range
 from api.schemas import (
     DemographicBucket,
     Demographics,
@@ -149,13 +149,8 @@ def _all_posts(
     end: date | None = None,
 ) -> list[PostRow]:
     """Posts published in the range (all of them without one)."""
-    if start and end and start > end:
-        raise HTTPException(422, "start must be on or before end")
     filters = [Filter("platform", "=", platform)] if platform else []
-    if start:
-        filters.append(Filter("posted_at", ">=", start_of_day(start)))
-    if end:
-        filters.append(Filter("posted_at", "<", start_of_day(end + timedelta(days=1))))
+    filters += optional_range("posted_at", start, end)
     rows = wh.fetch(
         "fct_social_posts",
         POST_COLUMNS,

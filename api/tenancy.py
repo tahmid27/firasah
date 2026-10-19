@@ -35,17 +35,23 @@ class SupabaseMembershipLookup:
         self._client = client or httpx.Client(timeout=10)
 
     def __call__(self, user: CurrentUser) -> tuple[str, str, str | None] | None:
-        response = self._client.get(
-            f"{self._settings.supabase_url}/rest/v1/memberships",
-            params={
+        request = {
+            "params": {
                 "select": "org_id,role,organisations(name)",
                 "user_id": f"eq.{user.user_id}",
             },
-            headers={
+            "headers": {
                 "apikey": self._settings.supabase_anon_key,
                 "Authorization": f"Bearer {user.token}",
             },
-        )
+        }
+        url = f"{self._settings.supabase_url}/rest/v1/memberships"
+        try:
+            response = self._client.get(url, **request)
+        except httpx.TransportError:
+            # A pooled connection the server closed while idle fails on first
+            # use; a read is safe to repeat, so try once more on a fresh one
+            response = self._client.get(url, **request)
         response.raise_for_status()
         rows = response.json()
         if not rows:

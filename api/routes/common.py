@@ -1,8 +1,11 @@
 """Helpers shared by the data endpoints."""
 
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import HTTPException, status
+
+from api.periods import start_of_day
+from api.warehouse import Filter
 
 MAX_PERIODS = 400
 
@@ -63,3 +66,16 @@ def check_range(start: date, end: date, interval: str) -> None:
             status.HTTP_422_UNPROCESSABLE_CONTENT,
             f"range too long: {count} {interval}s (max {MAX_PERIODS})",
         )
+
+
+def optional_range(column: str, start: date | None, end: date | None) -> list[Filter]:
+    """Filters on a TIMESTAMP column for an optional range of UK dates: all
+    time when neither end is given."""
+    if start and end and start > end:
+        raise HTTPException(422, "start must be on or before end")
+    filters = []
+    if start:
+        filters.append(Filter(column, ">=", start_of_day(start)))
+    if end:
+        filters.append(Filter(column, "<", start_of_day(end + timedelta(days=1))))
+    return filters

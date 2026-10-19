@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Path, Query, status
 
 from api.data import Today, Warehouse
 from api.periods import months_back, periods, start_of_day
-from api.routes.common import check_range, money
+from api.routes.common import check_range, money, optional_range
 from api.schemas import (
     CampaignLinks,
     CampaignRow,
@@ -24,7 +24,13 @@ router = APIRouter(prefix="/email", tags=["email"])
 
 
 @router.get("/campaigns", response_model=CampaignScorecard)
-def campaigns(wh: Warehouse, limit: Annotated[int, Query(ge=1, le=200)] = 50):
+def campaigns(
+    wh: Warehouse,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    start: date | None = None,
+    end: date | None = None,
+):
+    """Newest first; sent in the range when one is given."""
     rows = wh.fetch(
         "fct_mailchimp_campaigns",
         [
@@ -41,6 +47,7 @@ def campaigns(wh: Warehouse, limit: Annotated[int, Query(ge=1, le=200)] = 50):
             "hard_bounces",
             "soft_bounces",
         ],
+        filters=optional_range("send_time", start, end),
         order_by=[("send_time", "desc")],
         limit=limit,
     )
@@ -213,9 +220,11 @@ def list_health(
 
 
 @router.get("/send-times", response_model=SendTimes)
-def send_times(wh: Warehouse):
+def send_times(wh: Warehouse, start: date | None = None, end: date | None = None):
     """When supporters open and click: by hours after sending (averaged across
-    campaigns) and by hour of day in UK time (totals)."""
+    campaigns) and by hour of day in UK time (totals). With a range: activity
+    in that range."""
+    in_range = optional_range("hour_start", start, end)
     after = wh.fetch(
         "fct_mailchimp_campaign_hourly",
         [
@@ -224,6 +233,7 @@ def send_times(wh: Warehouse):
             Agg("avg", "recipient_clicks", "clicks"),
             Agg("count_distinct", "campaign_id", "campaigns"),
         ],
+        filters=in_range,
         order_by=[("hours_after_send", "asc")],
     )
     of_day = wh.fetch(
@@ -233,6 +243,7 @@ def send_times(wh: Warehouse):
             Agg("sum", "unique_opens", "opens"),
             Agg("sum", "recipient_clicks", "clicks"),
         ],
+        filters=in_range,
     )
     by_hour = {int(r["hour"]): r for r in of_day}
     return SendTimes(

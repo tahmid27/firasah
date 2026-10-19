@@ -403,7 +403,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Campaigns */
+        /**
+         * Campaigns
+         * @description Newest first; sent in the range when one is given.
+         */
         get: operations["campaigns_email_campaigns_get"];
         put?: never;
         post?: never;
@@ -481,7 +484,8 @@ export interface paths {
         /**
          * Send Times
          * @description When supporters open and click: by hours after sending (averaged across
-         *     campaigns) and by hour of day in UK time (totals).
+         *     campaigns) and by hour of day in UK time (totals). With a range: activity
+         *     in that range.
          */
         get: operations["send_times_email_send_times_get"];
         put?: never;
@@ -1883,6 +1887,8 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                start?: string | null;
+                end?: string | null;
             };
             header?: never;
             path?: never;
@@ -2007,7 +2013,10 @@ export interface operations {
     };
     send_times_email_send_times_get: {
         parameters: {
-            query?: never;
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2021,6 +2030,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SendTimes"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

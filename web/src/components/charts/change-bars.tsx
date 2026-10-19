@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { signed } from "@/lib/format";
+import { count, signed } from "@/lib/format";
 
 import { Legend, periodTick, periodTitle } from "./line-series";
 import type { Series } from "./stacked-bars";
@@ -25,12 +25,16 @@ export function ChangeBars({
   series,
   interval,
   label,
+  signedValues = true,
 }: {
   data: Row[];
   series: Series[];
   interval: "day" | "week" | "month";
   label: string;
+  // false for plain counts (no + sign on the axis or in the tooltip)
+  signedValues?: boolean;
 }) {
+  const show = (v: number) => (signedValues ? signed(v) : count(Math.abs(v)));
   const title = periodTitle(interval);
   return (
     <div className="flex flex-col gap-3">
@@ -51,7 +55,7 @@ export function ChangeBars({
               minTickGap={24}
             />
             <YAxis
-              tickFormatter={(v: number) => signed(v)}
+              tickFormatter={show}
               tickLine={false}
               axisLine={false}
               tick={{ fill: "var(--muted)", fontSize: 12 }}
@@ -75,7 +79,7 @@ export function ChangeBars({
                         <span className="font-medium tabular-nums text-ink">
                           {row[s.key] === null
                             ? "No reading"
-                            : signed(Number(row[s.key]))}
+                            : show(Number(row[s.key]))}
                         </span>
                       </p>
                     ))}

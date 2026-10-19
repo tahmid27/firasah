@@ -461,6 +461,8 @@ def test_campaign_scorecard(client):
         ("/fundraising/fundraisers", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/fundraising/projects", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/social/posts", {"start": "2026-05-01", "end": "2026-04-01"}),
+        ("/email/campaigns", {"start": "2026-05-01", "end": "2026-04-01"}),
+        ("/email/send-times", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/social/formats", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/social/best-time", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/fundraising/fundraisers", {"limit": 0}),
@@ -1026,3 +1028,14 @@ def test_net_followers_by_day(client):
         "2026-10-17",
         "2026-10-18",
     ]
+
+
+@pytest.mark.parametrize("path", ["/email/campaigns", "/email/send-times"])
+def test_email_endpoints_take_a_date_range(client, executor, path):
+    get(client, path, start="2026-10-01", end="2026-10-18")
+    for call in executor.calls:
+        values = [p.value for p in call["params"] if p.type_ == "TIMESTAMP"]
+        assert values == [
+            datetime(2026, 10, 1, tzinfo=UTC),
+            datetime(2026, 10, 19, tzinfo=UTC),
+        ]

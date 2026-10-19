@@ -331,6 +331,19 @@ def batches(
     # Mailchimp's daily activity covers a rolling ~180 days; one pull a month
     sends_by_day = {e.send_time.date(): e for e in emails}
     report_by_id = {rep["id"]: rep for rep in reports}
+    # Daily sign-ups and unsubscribes, computed once so the daily activity and
+    # the monthly growth history agree with each other
+    daily_subs, daily_unsubs = {}, {}
+    for day in subscribers:
+        e = sends_by_day.get(day)
+        rep = report_by_id[e.campaign_id] if e else None
+        unsubs = r.randint(0, 3) + (rep["unsubscribed"] if rep else 0)
+        net = subscribers[day] - subscribers.get(
+            day - timedelta(days=1), subscribers[day]
+        )
+        daily_unsubs[day] = unsubs
+        daily_subs[day] = max(0, net + unsubs) + r.randint(0, 2)
+
     activity, activity_times = [], []
     pull = start + timedelta(days=30)
     while pull <= end:
@@ -341,11 +354,6 @@ def batches(
         ]
         rows = []
         for day in window:
-            gained = max(
-                0,
-                subscribers[day]
-                - subscribers.get(day - timedelta(days=1), subscribers[day]),
-            )
             e = sends_by_day.get(day)
             rep = report_by_id[e.campaign_id] if e else None
             rows.append(
@@ -357,8 +365,8 @@ def batches(
                     "hard_bounce": rep["bounces"]["hard_bounces"] if rep else 0,
                     "soft_bounce": rep["bounces"]["soft_bounces"] if rep else 0,
                     # Form sign-ups only; imports and manual adds show as other_adds
-                    "subs": gained + r.randint(0, 2),
-                    "unsubs": r.randint(0, 3) + (rep["unsubscribed"] if rep else 0),
+                    "subs": daily_subs[day],
+                    "unsubs": daily_unsubs[day],
                     "other_adds": r.randint(0, 1),
                     "other_removes": r.randint(0, 1),
                 }
@@ -372,7 +380,6 @@ def batches(
     while month <= end:
         next_month = (month + timedelta(days=32)).replace(day=1)
         inside = [d for d in subscribers if month <= d < next_month]
-        change = subscribers[max(inside)] - subscribers[min(inside)]
         growth.append(
             {
                 "list_id": list_id,
@@ -380,10 +387,10 @@ def batches(
                 "existing": subscribers[min(inside)],
                 "imports": 0,
                 "optins": 0,
-                "subscribed": max(0, change) + r.randint(5, 30),
-                "unsubscribed": r.randint(3, 25),
+                "subscribed": sum(daily_subs[d] for d in inside),
+                "unsubscribed": sum(daily_unsubs[d] for d in inside),
                 "reconfirm": 0,
-                "cleaned": r.randint(0, 12),
+                "cleaned": round(subscribers[min(inside)] * r.uniform(0.001, 0.005)),
                 "pending": r.randint(0, 4),
                 "deleted": 0,
                 "transactional": 0,

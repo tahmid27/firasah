@@ -214,3 +214,23 @@ def test_audience_series_lands_on_its_counts_and_has_dips():
 
     assert values[0] == 1000 and 1492 <= values[-1] <= 1508
     assert sum(b < a for a, b in pairwise(values)) >= len(drops)
+
+
+def test_monthly_list_growth_matches_the_daily_activity(generated):
+    for g in generated.values():
+        batches = {b.table: b for b in g.batches}
+        if "raw_mailchimp_list_activity_daily" not in batches:
+            continue
+        daily = {
+            row["day"]: row for row in batches["raw_mailchimp_list_activity_daily"].rows
+        }
+        checked = 0
+        for month in batches["raw_mailchimp_list_growth_monthly"].rows:
+            days = [d for d in daily if d.startswith(month["month"])]
+            # Only months the rolling daily window covers completely
+            if len(days) < 28 or not any(d.endswith("-01") for d in days):
+                continue
+            assert month["unsubscribed"] == sum(daily[d]["unsubs"] for d in days)
+            assert month["subscribed"] == sum(daily[d]["subs"] for d in days)
+            checked += 1
+        assert checked
