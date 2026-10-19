@@ -459,6 +459,7 @@ def test_campaign_scorecard(client):
         ("/fundraising/income-over-time", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/social/followers-over-time", {"start": "2024-01-01", "end": "2026-10-18"}),
         ("/fundraising/fundraisers", {"start": "2026-05-01", "end": "2026-04-01"}),
+        ("/fundraising/projects", {"start": "2026-05-01", "end": "2026-04-01"}),
         ("/fundraising/fundraisers", {"limit": 0}),
         ("/fundraising/fundraisers", {"limit": 201}),
         ("/fundraising/fundraisers", {"project": "x" * 201}),
@@ -982,3 +983,13 @@ def test_overview_summary_trend_needs_every_account(client):
     # Until tt's first reading the total would undercount, so it's unknown
     assert by_day["2026-09-30"] is None
     assert by_day["2026-10-01"] == 150.0
+
+
+def test_projects_date_range(client, executor):
+    get(client, "/fundraising/projects", start="2026-10-01", end="2026-10-18")
+    values = [p.value for p in executor.calls[0]["params"] if p.type_ == "TIMESTAMP"]
+
+    assert values == [
+        datetime(2026, 10, 1, tzinfo=UTC),
+        datetime(2026, 10, 19, tzinfo=UTC),
+    ]

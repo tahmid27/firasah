@@ -49,6 +49,11 @@ def _donation_record(d: Donation, charity_id: int, r) -> dict:
     return shape_donation(record)
 
 
+def _round_target(amount: float) -> float:
+    step = 1_000 if amount >= 10_000 else 100
+    return max(step, round(amount / step) * step)
+
+
 def _page_body(
     charity: Charity,
     charity_id: int,
@@ -69,6 +74,10 @@ def _page_body(
         else created
     )
     target = fundraiser.target
+    if target and raised and fundraiser.owner in (None, charity.name):
+        # A charity's own appeal page runs for years, so a fixed target would
+        # be dwarfed; set one the appeal has nearly met or just passed
+        target = _round_target(raised / r.uniform(0.75, 1.25))
     return {
         "pageId": str(r.randint(9_000_000, 9_999_999)),
         "activityCharityCreated": fundraiser.owner == charity.name,

@@ -178,3 +178,23 @@ def test_fake_people_use_example_addresses_only(generated):
         for r in b.rows
     }
     assert emails and all(e.endswith("@example.com") for e in emails)
+
+
+def test_justgiving_pages_end_near_their_targets(generated):
+    pages = [
+        row
+        for _, b in all_batches(generated)
+        if b.table == "raw_justgiving_pages"
+        for row in b.rows
+        if float(row["fundraisingTarget"]) > 0
+    ]
+    assert pages
+    for page in pages:
+        target = float(page["fundraisingTarget"])
+        raised = float(page["grandTotalRaisedExcludingGiftAid"])
+        if page["activityCharityCreated"] and raised:
+            # A charity's appeal target is set against what it raised
+            assert 0.7 <= raised / target <= 1.4, page["title"]
+        else:
+            # A supporter's page stops collecting near its target
+            assert raised <= 3 * target, page["title"]

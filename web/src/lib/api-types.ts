@@ -99,7 +99,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Projects */
+        /**
+         * Projects
+         * @description All time unless a range is given.
+         */
         get: operations["projects_fundraising_projects_get"];
         put?: never;
         post?: never;
@@ -1372,7 +1375,10 @@ export interface operations {
     };
     projects_fundraising_projects_get: {
         parameters: {
-            query?: never;
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1386,6 +1392,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

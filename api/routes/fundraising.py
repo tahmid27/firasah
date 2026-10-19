@@ -149,15 +149,7 @@ def fundraisers(
     end: date | None = None,
 ):
     """All time unless a range is given."""
-    if start and end and start > end:
-        raise HTTPException(422, "start must be on or before end")
-    filters = [GBP]
-    if start:
-        filters.append(Filter("donation_date", ">=", start_of_day(start)))
-    if end:
-        filters.append(
-            Filter("donation_date", "<", start_of_day(end + timedelta(days=1)))
-        )
+    filters = [GBP, *_optional_range(start, end)]
     if project:
         filters.append(Filter("project_name", "=", project))
     rows = wh.fetch(
@@ -196,6 +188,20 @@ GIFT_SIZE_EDGES = (10, 25, 50, 100, 250)
 GIFT_AID_RATE = 0.25
 
 
+def _optional_range(start: date | None, end: date | None) -> list[Filter]:
+    """Filters for an optional range: all time when neither end is given."""
+    if start and end and start > end:
+        raise HTTPException(422, "start must be on or before end")
+    filters = []
+    if start:
+        filters.append(Filter("donation_date", ">=", start_of_day(start)))
+    if end:
+        filters.append(
+            Filter("donation_date", "<", start_of_day(end + timedelta(days=1)))
+        )
+    return filters
+
+
 def _date_range(start: date, end: date) -> list[Filter]:
     return [
         Filter("donation_date", ">=", start_of_day(start)),
@@ -211,7 +217,8 @@ def _default_year(
 
 
 @router.get("/projects", response_model=ProjectList)
-def projects(wh: Warehouse):
+def projects(wh: Warehouse, start: date | None = None, end: date | None = None):
+    """All time unless a range is given."""
     rows = wh.fetch(
         "fct_donations",
         [
@@ -222,7 +229,7 @@ def projects(wh: Warehouse):
             Agg("count_distinct", "fundraiser_name", "fundraisers"),
             Agg("max", "donation_date", "last_donation_at"),
         ],
-        filters=[GBP],
+        filters=[GBP, *_optional_range(start, end)],
     )
     combined: dict = {}
     for row in rows:
