@@ -28,7 +28,7 @@ export function ThemeToggle() {
     <div
       role="radiogroup"
       aria-label="Colour theme"
-      className="flex rounded-md border border-border bg-surface-sunken p-0.5"
+      className="sb-stack flex rounded-md border border-border bg-surface-sunken p-0.5"
     >
       {OPTIONS.map(({ value, label, icon: Icon }) => {
         const selected = theme === value;
