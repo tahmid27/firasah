@@ -103,7 +103,7 @@ export async function EmailTotals({ searchParams }: Props) {
         {tiles.map((tile) => (
           <Card key={tile.title} title={tile.title} subtitle={range.label}>
             <div>
-              <p className="text-3xl font-semibold tracking-tight">
+              <p className="font-heading text-3xl font-bold tracking-tight">
                 {tile.value}
               </p>
               <Delta

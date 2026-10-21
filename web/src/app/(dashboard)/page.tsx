@@ -20,7 +20,7 @@ export default function Home() {
       title="Overview"
       description="How fundraising, social and email are doing at a glance."
     >
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-(--card-gap) md:grid-cols-3">
         <Suspense fallback={<CardSkeleton title="Raised this month" />}>
           <RaisedTile />
         </Suspense>
@@ -31,7 +31,7 @@ export default function Home() {
           <AudienceTile metric="email_subscribers" />
         </Suspense>
       </div>
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-(--card-gap) lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Suspense
             fallback={
@@ -45,7 +45,7 @@ export default function Home() {
           <DataHealthCard />
         </Suspense>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-(--card-gap) lg:grid-cols-2">
         <Suspense
           fallback={
             <CardSkeleton title="Top fundraisers this month" height="h-48" />

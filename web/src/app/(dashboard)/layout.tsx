@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { Brand } from "@/components/brand";
+import { DensityToggle } from "@/components/density-toggle";
 import { MobileNav } from "@/components/mobile-nav";
 import { NavLinks } from "@/components/nav-links";
 import { OrgBadge, OrgBadgeFallback } from "@/components/org-badge";
@@ -12,6 +13,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function DashboardLayout({ children }: LayoutProps<"/">) {
   const footer = (
     <div className="flex flex-col gap-3">
+      <DensityToggle />
       <ThemeToggle />
       <Suspense fallback={<OrgBadgeFallback />}>
         <OrgBadge />

@@ -19,11 +19,11 @@ export function Card({
 }: CardProps) {
   return (
     <section
-      className={`flex min-w-0 flex-col gap-4 rounded-lg border border-border bg-surface p-5 ${className}`}
+      className={`flex min-w-0 flex-col gap-(--card-gap) rounded-lg border border-border bg-surface p-(--card-pad) ${className}`}
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-medium text-ink-2">{title}</h2>
+          <h2 className="font-heading text-base font-semibold tracking-tight text-ink">{title}</h2>
           {subtitle && <p className="mt-0.5 text-xs text-muted">{subtitle}</p>}
         </div>
         {action}

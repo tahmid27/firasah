@@ -31,7 +31,7 @@ export default function FundraisingPage({
     >
       <Suspense
         fallback={
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-(--card-gap) sm:grid-cols-3">
             <CardSkeleton title="Raised" height="h-12" />
             <CardSkeleton title="Donations" height="h-12" />
             <CardSkeleton title="Average donation" height="h-12" />
@@ -45,7 +45,7 @@ export default function FundraisingPage({
       >
         <IncomeCard searchParams={searchParams} />
       </Suspense>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-(--card-gap) lg:grid-cols-2">
         <Suspense fallback={<CardSkeleton title="Projects" height="h-48" />}>
           <ProjectsCard searchParams={searchParams} />
         </Suspense>
@@ -66,7 +66,7 @@ export default function FundraisingPage({
           <LeaderboardCard searchParams={searchParams} />
         </Suspense>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-(--card-gap) lg:grid-cols-2">
         <Suspense
           fallback={
             <CardSkeleton title="Where donations came from" height="h-56" />
@@ -85,7 +85,7 @@ export default function FundraisingPage({
       >
         <TimingCard searchParams={searchParams} />
       </Suspense>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-(--card-gap) md:grid-cols-3">
         <Suspense fallback={<CardSkeleton title="Gift Aid" />}>
           <GiftAidCard searchParams={searchParams} />
         </Suspense>
