@@ -88,7 +88,7 @@ export async function TotalsTiles({ searchParams }: Props) {
       {tiles.map((tile) => (
         <Card key={tile.title} title={tile.title} subtitle={range.label}>
           <div>
-            <p className="text-3xl font-semibold tracking-tight">
+            <p className="font-heading text-3xl font-bold tracking-tight">
               {tile.value}
             </p>
             <Delta pct={tile.pct} label={`${vs} (${tile.was})`} />
@@ -553,7 +553,7 @@ export async function GiftAidCard({ searchParams }: Props) {
       {connected.has("launchgood") && (
         <div className="flex flex-col gap-1">
           <p className="text-xs text-muted">LaunchGood · {range.label}</p>
-          <p className="text-2xl font-semibold tracking-tight">
+          <p className="font-heading text-2xl font-bold tracking-tight">
             {gbp(giftAid.claim_value)}
           </p>
           <p className="text-xs text-ink-2">
@@ -566,7 +566,7 @@ export async function GiftAidCard({ searchParams }: Props) {
       {connected.has("justgiving") && (
         <div className="flex flex-col gap-1 border-t border-hairline pt-3 first:border-0 first:pt-0">
           <p className="text-xs text-muted">JustGiving · all pages, all time</p>
-          <p className="text-2xl font-semibold tracking-tight">
+          <p className="font-heading text-2xl font-bold tracking-tight">
             {gbp(giftAid.justgiving_estimated_gift_aid)}
           </p>
           <p className="text-xs text-ink-2">
@@ -612,7 +612,7 @@ export async function ZakatCard({ searchParams }: Props) {
       ) : (
         <>
           <div>
-            <p className="text-2xl font-semibold tracking-tight">
+            <p className="font-heading text-2xl font-bold tracking-tight">
               {gbp(zakat.total_zakat)}
             </p>
             <p className="text-xs text-ink-2">
@@ -672,7 +672,7 @@ export async function FeesCard({ searchParams }: Props) {
       ) : (
         <>
           <div>
-            <p className="text-2xl font-semibold tracking-tight">{gbp(paid)}</p>
+            <p className="font-heading text-2xl font-bold tracking-tight">{gbp(paid)}</p>
             <p className="text-xs text-ink-2">
               in fees · {rate(paid / gross)} of what donors gave
             </p>
