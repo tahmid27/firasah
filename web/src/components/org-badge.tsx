@@ -6,8 +6,8 @@ import { getMe } from "@/lib/api";
 export async function OrgBadge() {
   const me = await getMe();
   return (
-    <div className="flex items-center justify-between gap-2">
-      <div className="min-w-0">
+    <div className="sb-center flex items-center justify-between gap-2">
+      <div className="sb-hide min-w-0">
         <p className="text-xs text-muted">Signed in to</p>
         <p className="line-clamp-2 text-sm font-medium">
           {me.org_name ?? me.org_id}
