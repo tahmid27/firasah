@@ -37,7 +37,8 @@ function NavList({ query, onNavigate }: Props & { query: string }) {
               href={`${href}${query}`}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+              title={label}
+              className={`sb-center flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
                 active
                   ? "bg-accent-soft font-medium text-ink"
                   : "text-ink-2 hover:bg-surface-sunken hover:text-ink"
@@ -46,10 +47,10 @@ function NavList({ query, onNavigate }: Props & { query: string }) {
               <Icon
                 size={18}
                 strokeWidth={1.75}
-                className={active ? "text-accent" : "text-muted"}
+                className={`shrink-0 ${active ? "text-accent" : "text-muted"}`}
                 aria-hidden
               />
-              {label}
+              <span className="sb-hide">{label}</span>
             </Link>
           </li>
         );

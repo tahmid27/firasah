@@ -23,10 +23,10 @@ export function PageShell({
   children,
 }: Props) {
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-(--page-gap)">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="font-heading text-2xl font-bold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-ink-2">{description}</p>
         </div>
         {(controls || searchParams) && (

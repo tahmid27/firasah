@@ -33,7 +33,7 @@ export default function SocialPage({ searchParams }: PageProps<"/social">) {
     >
       <Suspense
         fallback={
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-(--card-gap) sm:grid-cols-3">
             <CardSkeleton title="Followers" height="h-12" />
             <CardSkeleton title="Posts published" height="h-12" />
             <CardSkeleton title="Average engagement" height="h-12" />
@@ -42,7 +42,7 @@ export default function SocialPage({ searchParams }: PageProps<"/social">) {
       >
         <SocialTotals searchParams={searchParams} />
       </Suspense>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-(--card-gap) lg:grid-cols-2">
         <Suspense
           fallback={<CardSkeleton title="Followers over time" height="h-60" />}
         >
@@ -61,7 +61,7 @@ export default function SocialPage({ searchParams }: PageProps<"/social">) {
           <PostsCard searchParams={searchParams} />
         </Suspense>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-(--card-gap) lg:grid-cols-2">
         <Suspense
           fallback={
             <CardSkeleton title="What format works best" height="h-48" />
