@@ -153,12 +153,21 @@ export async function TimelineCard({ searchParams }: Props) {
   }
   const emails = result.events.filter((e) => e.kind === "email").length;
   const posts = result.events.length - emails;
+  const nothing =
+    result.events.length === 0 &&
+    [...byPeriod.values()].every((p) => p.raised === 0);
   return (
     <Card
       title={title}
       subtitle={`${interval === "day" ? "Daily" : "Weekly"} · ${range.label} · ${count(emails)} emails, ${count(posts)} posts`}
     >
-      <Timeline data={[...byPeriod.values()]} interval={interval} />
+      {nothing ? (
+        <p className="text-sm text-ink-2">
+          No donations, posts or emails in this period.
+        </p>
+      ) : (
+        <Timeline data={[...byPeriod.values()]} interval={interval} />
+      )}
       <p className="text-xs text-muted">
         Shows what went out around a rise in giving, not that it caused it:
         appeals, paydays and seasons like Ramadan move giving too.
