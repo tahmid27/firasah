@@ -18,9 +18,9 @@
   --accent-soft: #e4eaf6;
   --danger: #b42318;
   /* Charts: categorical slots from the validated dataviz palette, fixed order */
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --series-3: #1baf7a;
+  --series-1: #1c3f7a;
+  --series-2: #b7791f;
+  --series-3: #12846a;
   --grid: #e6ebf2;
   --axis: #c4cddb;
   /* Status: reserved for state, always shown with an icon and label */
