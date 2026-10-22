@@ -1,6 +1,7 @@
 """Appeals endpoints: donations, posts, emails and followers on one timeline."""
 
 from collections import defaultdict
+from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import date, timedelta
 from typing import Annotated, Literal
 
@@ -118,27 +119,45 @@ def timeline(
     )
 
 
-def _window(wh: Warehouse, start: date, end: date) -> WindowStats:
-    daily = _daily_donations(wh, start, end)
-    posts = wh.fetch(
-        "fct_social_posts",
-        [Agg("count", "*", "n")],
-        filters=_between("posted_at", start, end),
-    )
-    emails = wh.fetch(
-        "fct_mailchimp_campaigns",
-        [Agg("count", "*", "n")],
-        filters=_between("send_time", start, end),
-    )
-    followers = wh.fetch(
-        "fct_social_account_stats",
-        [
-            Bucket("ingested_at", "day", "day"),
-            "account_id",
-            Agg("max", "follower_count", "f"),
-        ],
-        filters=[Filter("ingested_at", "<", start_of_day(end + timedelta(days=1)))],
-    )
+# The window report makes several independent queries per window, and BigQuery
+# spends most of its time waiting, so they run side by side. A shared pool
+# whose tasks never submit more tasks can't deadlock itself.
+_POOL = ThreadPoolExecutor(max_workers=16)
+
+
+def _start_window(wh: Warehouse, start: date, end: date) -> dict[str, Future]:
+    return {
+        "daily": _POOL.submit(_daily_donations, wh, start, end),
+        "posts": _POOL.submit(
+            wh.fetch,
+            "fct_social_posts",
+            [Agg("count", "*", "n")],
+            filters=_between("posted_at", start, end),
+        ),
+        "emails": _POOL.submit(
+            wh.fetch,
+            "fct_mailchimp_campaigns",
+            [Agg("count", "*", "n")],
+            filters=_between("send_time", start, end),
+        ),
+        "followers": _POOL.submit(
+            wh.fetch,
+            "fct_social_account_stats",
+            [
+                Bucket("ingested_at", "day", "day"),
+                "account_id",
+                Agg("max", "follower_count", "f"),
+            ],
+            filters=[Filter("ingested_at", "<", start_of_day(end + timedelta(days=1)))],
+        ),
+    }
+
+
+def _finish_window(start: date, end: date, queries: dict[str, Future]) -> WindowStats:
+    daily = queries["daily"].result()
+    posts = queries["posts"].result()
+    emails = queries["emails"].result()
+    followers = queries["followers"].result()
     readings: dict = defaultdict(list)
     for row in sorted(followers, key=lambda r: r["day"]):
         readings[row["account_id"]].append((row["day"], float(row["f"])))
@@ -166,8 +185,12 @@ def window_report(
     start = start or end - timedelta(days=29)
     check_range(start, end, "month")  # totals, not a daily series
     length = (end - start).days + 1
-    current = _window(wh, start, end)
-    previous = _window(wh, start - timedelta(days=length), start - timedelta(days=1))
+    before = (start - timedelta(days=length), start - timedelta(days=1))
+    # Start all eight queries, then collect them
+    now_queries = _start_window(wh, start, end)
+    before_queries = _start_window(wh, *before)
+    current = _finish_window(start, end, now_queries)
+    previous = _finish_window(*before, before_queries)
     return WindowReport(
         currency="GBP",
         current=current,
