@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { CardSkeleton } from "@/components/card";
+import { GettingStarted } from "@/components/getting-started";
 import { PageShell } from "@/components/page-shell";
 
 import {
@@ -20,6 +21,9 @@ export default function Home() {
       title="Overview"
       description="How fundraising, social and email are doing at a glance."
     >
+      <Suspense fallback={null}>
+        <GettingStarted />
+      </Suspense>
       <div className="grid gap-(--card-gap) md:grid-cols-3">
         <Suspense fallback={<CardSkeleton title="Raised this month" />}>
           <RaisedTile />
