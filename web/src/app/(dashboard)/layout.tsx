@@ -4,6 +4,7 @@ import { Brand } from "@/components/brand";
 import { MobileNav } from "@/components/mobile-nav";
 import { NavLinks } from "@/components/nav-links";
 import { OrgBadge, OrgBadgeFallback } from "@/components/org-badge";
+import { SidebarToggle } from "@/components/sidebar-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 // Not an auth check: the proxy redirects logged-out visitors, and every data
@@ -21,14 +22,15 @@ export default function DashboardLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-8 border-r border-hairline bg-surface px-3 py-5 md:flex">
-        <div className="px-3">
+      <aside className="sb-aside sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-8 border-r border-hairline bg-surface px-3 py-5 md:flex">
+        <div className="sb-center sb-pad flex px-3">
           <Brand />
         </div>
         <nav aria-label="Main">
           <NavLinks />
         </nav>
-        <div className="mt-auto border-t border-hairline px-3 pt-4">
+        <div className="sb-pad mt-auto flex flex-col gap-3 border-t border-hairline px-3 pt-4">
+          <SidebarToggle />
           {footer}
         </div>
       </aside>

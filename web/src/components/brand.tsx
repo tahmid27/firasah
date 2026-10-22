@@ -7,7 +7,9 @@ export function Brand() {
       >
         F
       </span>
-      <span className="text-base font-semibold tracking-tight">Firasah</span>
+      <span className="sb-hide font-heading text-base font-bold tracking-tight">
+        Firasah
+      </span>
     </div>
   );
 }

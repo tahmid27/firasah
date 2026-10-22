@@ -121,7 +121,7 @@ export async function SocialTotals({ searchParams }: Props) {
           </p>
         ) : (
           <div>
-            <p className="text-3xl font-semibold tracking-tight">
+            <p className="font-heading text-3xl font-bold tracking-tight">
               {count(end)}
             </p>
             <Delta
@@ -132,7 +132,7 @@ export async function SocialTotals({ searchParams }: Props) {
         )}
       </Card>
       <Card title="Posts published" subtitle={`${which} · ${range.label}`}>
-        <p className="text-3xl font-semibold tracking-tight">{count(posts)}</p>
+        <p className="font-heading text-3xl font-bold tracking-tight">{count(posts)}</p>
         <p className="text-xs text-muted">
           About {(posts / Math.max(1, days / 7)).toFixed(1)} a week
         </p>
@@ -141,7 +141,7 @@ export async function SocialTotals({ searchParams }: Props) {
         title="Average engagement"
         subtitle={`${which} · posts in ${range.label}`}
       >
-        <p className="text-3xl font-semibold tracking-tight">
+        <p className="font-heading text-3xl font-bold tracking-tight">
           {engagement === null ? "–" : rate(engagement)}
         </p>
         <p className="text-xs text-muted">

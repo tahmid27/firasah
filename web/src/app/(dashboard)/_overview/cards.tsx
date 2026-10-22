@@ -39,7 +39,7 @@ export async function RaisedTile() {
       subtitle={`${monthYear(now.month_start)}, up to ${dayMonth(now.through)}`}
     >
       <div>
-        <p className="text-3xl font-semibold tracking-tight">
+        <p className="font-heading text-3xl font-bold tracking-tight">
           {gbp(now.raised)}
         </p>
         <Delta
@@ -92,7 +92,7 @@ export async function AudienceTile({
         <p className="text-sm text-ink-2">No data yet.</p>
       ) : (
         <div>
-          <p className="text-3xl font-semibold tracking-tight">
+          <p className="font-heading text-3xl font-bold tracking-tight">
             {count(m.value)}
           </p>
           <Delta
