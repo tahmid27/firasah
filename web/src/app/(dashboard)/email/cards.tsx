@@ -312,29 +312,36 @@ export async function GrowthCard({ searchParams }: Props) {
         : -Number(row.unsubscribes),
   }));
   const word = { day: "Daily", week: "Weekly", month: "Monthly" }[interval];
+  const empty = data.every((r) => !r.new_subscribers && !r.unsubscribes);
   return (
     <Card
       title={title}
       subtitle={`${word} · ${range.label} · sign-ups through Mailchimp forms only`}
     >
-      <ChangeBars
-        data={data}
-        series={[
-          {
-            key: "new_subscribers",
-            label: "New subscribers",
-            colour: "var(--series-1)",
-          },
-          {
-            key: "unsubscribes",
-            label: "Unsubscribes",
-            colour: "var(--series-2)",
-          },
-        ]}
-        interval={interval}
-        label={`New subscribers and unsubscribes per ${interval}`}
-        signedValues={false}
-      />
+      {empty ? (
+        <p className="text-sm text-ink-2">
+          No sign-ups or unsubscribes in this period.
+        </p>
+      ) : (
+        <ChangeBars
+          data={data}
+          series={[
+            {
+              key: "new_subscribers",
+              label: "New subscribers",
+              colour: "var(--series-1)",
+            },
+            {
+              key: "unsubscribes",
+              label: "Unsubscribes",
+              colour: "var(--series-2)",
+            },
+          ]}
+          interval={interval}
+          label={`New subscribers and unsubscribes per ${interval}`}
+          signedValues={false}
+        />
+      )}
       <p className="text-xs text-muted">
         Contacts added by hand or imported don&apos;t show here; the subscriber
         total on the Overview includes them.
@@ -365,6 +372,9 @@ export async function ListHealthCard({ searchParams }: Props) {
     ),
   );
   if (!result) return <CardError title={title} />;
+  const noLosses = result.data.every(
+    (row) => !row.unsubscribed && !row.cleaned && !row.bounces,
+  );
   const measures = [
     { key: "unsubscribed", title: "Unsubscribed" },
     { key: "cleaned", title: "Cleaned (dead addresses)" },
@@ -375,21 +385,27 @@ export async function ListHealthCard({ searchParams }: Props) {
       title={title}
       subtitle={`What the list loses each month · last ${months} month${months === 1 ? "" : "s"} · each chart has its own scale`}
     >
-      <div className="grid gap-4 sm:grid-cols-3">
-        {measures.map((m) => (
-          <MiniBars
-            key={m.key}
-            title={m.title}
-            data={result.data.map((row) => ({
-              period: String(row.period),
-              value:
-                row[m.key] === null || row[m.key] === undefined
-                  ? null
-                  : Number(row[m.key]),
-            }))}
-          />
-        ))}
-      </div>
+      {noLosses ? (
+        <p className="text-sm text-ink-2">
+          No unsubscribes, cleaned addresses or bounces recorded in this period.
+        </p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {measures.map((m) => (
+            <MiniBars
+              key={m.key}
+              title={m.title}
+              data={result.data.map((row) => ({
+                period: String(row.period),
+                value:
+                  row[m.key] === null || row[m.key] === undefined
+                    ? null
+                    : Number(row[m.key]),
+              }))}
+            />
+          ))}
+        </div>
+      )}
       <p className="text-xs text-muted">
         Bounces are emails that couldn&apos;t be delivered, counted per send:
         hard bounces (the address doesn&apos;t exist) and soft bounces (a
