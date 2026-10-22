@@ -9,7 +9,7 @@ import argparse
 import os
 import subprocess
 import sys
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -123,6 +123,18 @@ def demo_logins() -> None:
         print(f"[synthetic] demo login ready for {c.name} ({c.org_id})")
 
 
+def data_end_date(now: datetime) -> date:
+    """The last day the demo data covers.
+
+    The generator stamps its latest pull at 06:00 UTC on that day (and the run
+    log at 07:00), so using today keeps Data health "Up to date" for the next
+    30 hours after a reload. Before 07:00 UTC today's stamps would be in the
+    future, so it falls back to yesterday.
+    """
+    today = now.date()
+    return today if now.hour >= 7 else today - timedelta(days=1)
+
+
 def main() -> int:
     load_dotenv()
     parser = argparse.ArgumentParser()
@@ -135,7 +147,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    end = datetime.now(UTC).date() - timedelta(days=1)
+    end = data_end_date(datetime.now(UTC))
     generated = [generate(c, end, args.seed, OUT_DIR) for c in CHARITIES]
     for g in generated:
         print(
