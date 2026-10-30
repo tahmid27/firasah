@@ -264,6 +264,15 @@ export async function TopFundraisersCard() {
 }
 
 // O7
+// The API's format can already name the platform ("TikTok video"), so only
+// add the platform when it doesn't.
+function postKind(platform: string, format: string) {
+  const name = platformName(platform);
+  return format.toLowerCase().startsWith(name.toLowerCase())
+    ? format
+    : `${name} ${format.toLowerCase()}`;
+}
+
 export async function LatestActivityCard() {
   const title = "Latest post and email";
   const result = await attempt(async () => {
@@ -286,7 +295,7 @@ export async function LatestActivityCard() {
           <p className="text-xs text-muted">
             Latest post
             {post &&
-              ` · ${platformName(post.platform)} ${post.format.toLowerCase()} · ${ukDate(post.posted_at)}`}
+              ` · ${postKind(post.platform, post.format)} · ${ukDate(post.posted_at)}`}
           </p>
           {post ? (
             <>
