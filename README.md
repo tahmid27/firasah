@@ -23,6 +23,16 @@ Built solo, end to end: connectors, warehouse modelling, a secured API, and the 
 - **266 pytest tests** plus a live isolation check that creates a second tenant and tries to read the first
 - A **synthetic data generator** for three fake charities (about 108,000 donations over three years) that runs through the real connectors' parsing code and every dbt model
 
+## Screenshots
+
+Synthetic data for a fictional large charity, "Unity Relief" (see [Synthetic data](#synthetic-data)).
+
+![Overview page: headline fundraising, followers and subscribers, 12-month income, data health, top fundraisers](assets/screenshots/overview.png)
+
+![Fundraising page: income by platform, projects, progress against targets, fundraiser leaderboard](assets/screenshots/fundraising.png)
+
+![Social page: followers, net followers, posts table and engagement](assets/screenshots/social.png)
+
 ## Architecture
 
 ```
@@ -192,3 +202,7 @@ Python · FastAPI · dbt · Prefect · BigQuery · Supabase (auth) · Next.js ·
 ## Licence
 
 Source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE). You are welcome to read, run and learn from the code, including to evaluate it as a piece of work. Commercial use is not permitted without a separate agreement; get in touch if you want one.
+
+## Contact
+
+Tahmid Naser · [LinkedIn](https://www.linkedin.com/in/tahmid-naser-52379022b) · tahmidnaser@outlook.com
