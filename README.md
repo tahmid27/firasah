@@ -174,7 +174,7 @@ supabase/     database migrations (membership table, row-level security, grants)
 tests/        pytest suite
 scripts/      one-off auth helpers and the live tenant-isolation check
 ci/           placeholder dbt profile used by CI
-CLAUDE.md     working notes and decision log, with dates and reasoning
+CLAUDE.md     conventions, commands and architecture rules for coding agents and contributors
 ```
 
 ## Status
@@ -188,3 +188,7 @@ CLAUDE.md     working notes and decision log, with dates and reasoning
 ## Stack
 
 Python · FastAPI · dbt · Prefect · BigQuery · Supabase (auth) · Next.js · Recharts · GitHub Actions. Planned: Docker · GCP Cloud Run · Stripe.
+
+## Licence
+
+Source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE). You are welcome to read, run and learn from the code, including to evaluate it as a piece of work. Commercial use is not permitted without a separate agreement; get in touch if you want one.

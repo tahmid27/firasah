@@ -46,3 +46,6 @@ out/
 
 # OS
 .DS_Store
+
+# Private working notes (full decision log, personal context)
+CLAUDE.local.md
