@@ -1,0 +1,24 @@
+# Keep secrets, local state and bulky folders out of every build context
+.env
+.env.*
+!.env.example
+credentials/
+.git
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+data
+docs
+dbt
+ingestion
+synthetic
+tests
+scripts
+assets
+.claude
+CLAUDE.local.md
+**/node_modules
+**/.next
+**/.next.nosync
+.DS_Store

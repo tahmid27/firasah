@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   // The repo lives in an iCloud-synced folder; iCloud skips names ending in
   // .nosync, so it can't leave conflict copies ("routes.d 2.ts") in the build.
   distDir: ".next.nosync",
+  // Self-contained server output for the Docker image.
+  output: "standalone",
   /* config options here */
   cacheComponents: true,
   // Dev-only badge; bottom-left would cover the sidebar's charity name.
