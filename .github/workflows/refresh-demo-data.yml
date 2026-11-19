@@ -1,0 +1,64 @@
+# Rebuilds the synthetic demo dataset every morning so the live demo is never
+# "Out of date". Keyless Google sign-in as a refresh account that can write only
+# to the synthetic dataset.
+#
+# DEMO-ONLY SHORTCUT: real charities need a hosted Cloud Run Job on Cloud
+# Scheduler, not a GitHub schedule. See "MUST FIX BEFORE ONBOARDING REAL
+# CLIENTS" in CLAUDE.local.md.
+name: Refresh demo data
+
+on:
+  schedule:
+    # Just after 07:00 UTC: the generator stamps its latest pull at 06:00 UTC,
+    # and Data health calls a source "Out of date" after 30 hours.
+    - cron: "30 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: refresh-demo-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GOOGLE_CLOUD_PROJECT: firasah-dev-511916
+      DBT_PROFILES_DIR: ci/synthetic
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.3.0
+
+      - name: Install dependencies (exactly as locked)
+        run: uv sync --locked
+
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/647234305259/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: firasah-refresh@firasah-dev-511916.iam.gserviceaccount.com
+
+      # Keeps yesterday's dashboard tables in place until dbt rebuilds them
+      - name: Regenerate, load and rebuild the synthetic dataset
+        run: uv run python -m synthetic.load --skip-supabase --keep-marts
+
+      - name: Check the data is fresh
+        run: |
+          uv run python - <<'PY'
+          from datetime import date, timedelta
+          from google.cloud import bigquery
+
+          rows = list(bigquery.Client().query(
+              "select org_id, max(date(donation_date)) as latest, count(*) as n "
+              "from `firasah-dev-511916.firasah_synthetic.fct_donations` group by org_id"
+          ).result())
+          for r in rows:
+              print(r.org_id, r.latest, r.n)
+          assert len(rows) == 3, f"expected 3 charities, got {len(rows)}"
+          stale = [r.org_id for r in rows if r.latest < date.today() - timedelta(days=2)]
+          assert not stale, f"stale data for {stale}"
+          PY

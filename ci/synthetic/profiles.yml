@@ -1,0 +1,13 @@
+# dbt profile for the scheduled demo-data refresh in GitHub Actions. Signs in
+# with the keyless Google credentials that the workflow sets up (oauth), and
+# writes only to the synthetic dataset.
+firasah:
+  target: synthetic
+  outputs:
+    synthetic:
+      type: bigquery
+      method: oauth
+      project: firasah-dev-511916
+      dataset: firasah_synthetic
+      location: europe-west2
+      threads: 4
