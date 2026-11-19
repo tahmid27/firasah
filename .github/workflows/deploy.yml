@@ -20,6 +20,8 @@ concurrency:
 env:
   PROJECT: firasah-dev-511916
   REGION: europe-west2
+  # The website runs in Belgium because Cloud Run can't map a custom domain in London
+  WEB_REGION: europe-west1
   REGISTRY: europe-west2-docker.pkg.dev/firasah-dev-511916/firasah
 
 jobs:
@@ -55,12 +57,12 @@ jobs:
         run: gcloud run deploy firasah-api --image "$REGISTRY/api:$SHA" --region "$REGION" --project "$PROJECT"
 
       - name: Deploy the website
-        run: gcloud run deploy firasah-web --image "$REGISTRY/web:$SHA" --region "$REGION" --project "$PROJECT"
+        run: gcloud run deploy firasah-web --image "$REGISTRY/web:$SHA" --region "$WEB_REGION" --project "$PROJECT"
 
       - name: Smoke test
         run: |
           api=$(gcloud run services describe firasah-api --region "$REGION" --project "$PROJECT" --format='value(status.url)')
-          web=$(gcloud run services describe firasah-web --region "$REGION" --project "$PROJECT" --format='value(status.url)')
+          web=$(gcloud run services describe firasah-web --region "$WEB_REGION" --project "$PROJECT" --format='value(status.url)')
           curl -fsS "$api/health"
           test "$(curl -s -o /dev/null -w '%{http_code}' "$api/me")" = 401
           test "$(curl -s -o /dev/null -w '%{http_code}' "$web/login")" = 200
