@@ -2,7 +2,7 @@
 demo charities, load it through the real loader, build dbt into the
 `synthetic` target, and set up one demo login per charity.
 
-Usage: uv run python -m synthetic.load [--seed 42] [--skip-supabase]
+Usage: uv run python -m synthetic.load [--seed 42] [--skip-supabase] [--keep-marts]
 """
 
 import argparse
@@ -14,6 +14,7 @@ from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
+from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 
 from ingestion.common import load_raw_to_bigquery, raw_table_id, update_env_file
@@ -30,20 +31,38 @@ DBT_ARGS = [
     "--project-dir",
     "dbt",
     "--profiles-dir",
-    str(Path("~/.dbt").expanduser()),
+    str(Path(os.environ.get("DBT_PROFILES_DIR", "~/.dbt")).expanduser()),
 ]
 
 
-def reset_dataset(client: bigquery.Client, dataset: str) -> None:
+# Dashboard tables the API reads. A nightly refresh keeps these in place until
+# dbt rebuilds them, so the live demo never goes empty while data reloads.
+MART_PREFIXES = ("fct_", "dim_")
+
+
+def tables_to_delete(names: list[str], keep_marts: bool) -> list[str]:
+    if not keep_marts:
+        return names
+    return [n for n in names if not n.startswith(MART_PREFIXES)]
+
+
+def reset_dataset(
+    client: bigquery.Client, dataset: str, keep_marts: bool = False
+) -> None:
     if not dataset.endswith("_synthetic"):
         raise SystemExit(f"refusing to wipe {dataset!r}: not a synthetic dataset")
     ref = f"{client.project}.{dataset}"
-    target = bigquery.Dataset(ref)
-    target.location = LOCATION
-    client.create_dataset(target, exists_ok=True)
-    for table in client.list_tables(ref):
-        client.delete_table(table.reference)
-    print(f"[synthetic] {ref} is empty")
+    try:
+        client.get_dataset(ref)
+    except NotFound:
+        target = bigquery.Dataset(ref)
+        target.location = LOCATION
+        client.create_dataset(target)
+    tables = {t.table_id: t.reference for t in client.list_tables(ref)}
+    for name in tables_to_delete(list(tables), keep_marts):
+        client.delete_table(tables[name])
+    kept = "dashboard tables kept" if keep_marts else "empty"
+    print(f"[synthetic] {ref} reset ({kept})")
 
 
 def dbt(command: str, *extra: str) -> None:
@@ -141,6 +160,11 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--skip-supabase", action="store_true")
     parser.add_argument(
+        "--keep-marts",
+        action="store_true",
+        help="leave the dashboard tables in place until dbt rebuilds them",
+    )
+    parser.add_argument(
         "--resume",
         action="store_true",
         help="the first pull is already loaded: continue from the first snapshot",
@@ -156,7 +180,7 @@ def main() -> int:
 
     client = bigquery.Client()
     if not args.resume:
-        reset_dataset(client, DATASET)
+        reset_dataset(client, DATASET, keep_marts=args.keep_marts)
     for phase in (1, 2):
         if phase == 2 or not args.resume:
             for g in generated:
