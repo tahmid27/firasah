@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/logo-dark.png">
+    <img src="assets/brand/logo-light.png" alt="Firasah" width="260">
+  </picture>
+</p>
+
 # Firasah
 
 [![CI](https://github.com/tahmid27/firasah/actions/workflows/ci.yml/badge.svg)](https://github.com/tahmid27/firasah/actions/workflows/ci.yml)
