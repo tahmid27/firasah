@@ -1,0 +1,8 @@
+# Builds the API image. Logs go to Cloud Logging so the deployer account can stream them.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: [build, -t, "${_IMAGE}", .]
+images:
+  - ${_IMAGE}
+options:
+  logging: CLOUD_LOGGING_ONLY
