@@ -1,14 +1,24 @@
+import { BrandMark } from "@/components/brand-mark";
+
 export function Brand() {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 text-accent">
+      <BrandMark className="size-8 shrink-0" />
       <span
-        aria-hidden
-        className="grid size-7 place-items-center rounded-md bg-accent text-sm font-semibold text-accent-ink"
+        aria-label="Firasah"
+        className="sb-hide font-heading text-lg font-bold tracking-tight"
       >
-        F
-      </span>
-      <span className="sb-hide font-heading text-base font-bold tracking-tight">
-        Firasah
+        <span aria-hidden>
+          F
+          <span className="relative">
+            ı
+            <span
+              className="absolute left-1/2 top-[0.3em] size-[0.21em] -translate-x-1/2 rounded-full"
+              style={{ background: "var(--series-2)" }}
+            />
+          </span>
+          rasah
+        </span>
       </span>
     </div>
   );

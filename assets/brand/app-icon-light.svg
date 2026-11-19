@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Firasah app icon light">
+  <rect width="64" height="64" rx="14" fill="#f4f6fa" />
+  <line x1="20" y1="44" x2="34" y2="24" stroke="#17305c" stroke-width="4.2" />
+  <line x1="34" y1="24" x2="46" y2="38" stroke="#17305c" stroke-width="4.2" />
+  <circle cx="20" cy="44" r="6.5" fill="#17305c" />
+  <circle cx="46" cy="38" r="6.5" fill="#17305c" />
+  <circle cx="34" cy="24" r="6.5" fill="#b7791f" />
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="Firasah favicon">
+  <line x1="3.5" y1="12" x2="8.5" y2="4.5" stroke="#17305c" stroke-width="2.2" stroke-linecap="round" />
+  <line x1="8.5" y1="4.5" x2="12.5" y2="10" stroke="#17305c" stroke-width="2.2" stroke-linecap="round" />
+  <circle cx="3.5" cy="12" r="2.3" fill="#17305c" />
+  <circle cx="12.5" cy="10" r="2.3" fill="#17305c" />
+  <circle cx="8.5" cy="4.5" r="2.5" fill="#b7791f" />
+</svg>
