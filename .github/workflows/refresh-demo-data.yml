@@ -29,6 +29,15 @@ jobs:
     env:
       GOOGLE_CLOUD_PROJECT: firasah-dev-511916
       DBT_PROFILES_DIR: ci/synthetic
+      # The generator imports the real connectors' parsing code, and those read
+      # their keys on import. Synthetic data makes no real API calls, so these
+      # are placeholders (same as tests/conftest.py).
+      JUSTGIVING_APP_ID: placeholder
+      MAILCHIMP_API_KEY: placeholder-us1
+      INSTAGRAM_ACCESS_TOKEN: placeholder
+      TIKTOK_CLIENT_KEY: placeholder
+      TIKTOK_CLIENT_SECRET: placeholder
+      TIKTOK_REFRESH_TOKEN: placeholder
     steps:
       - uses: actions/checkout@v7
 
