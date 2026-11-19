@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { Brand } from "@/components/brand";
 
+import { DemoButton } from "./demo-button";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in · Firasah" };
@@ -16,6 +17,12 @@ export default function LoginPage() {
           Your charity&apos;s fundraising, social and email in one place.
         </p>
         <LoginForm />
+        <div className="my-6 flex items-center gap-3 text-xs text-ink-2">
+          <span className="h-px flex-1 bg-border" />
+          or
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <DemoButton />
       </div>
     </main>
   );
