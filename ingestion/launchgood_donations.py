@@ -31,12 +31,41 @@ def _sanitize_column_name(header: str) -> str:
     return re.sub(r"[^0-9a-zA-Z]+", "_", header).strip("_").lower()
 
 
+# Money columns. Every CSV cell is text, and BigQuery autodetect guesses a
+# column's type from the first batch it sees: a batch whose Zakat amounts are
+# all whole numbers ("100") makes the column INTEGER, and the next batch's
+# "100.0" then fails the load. Sending real decimals keeps the column FLOAT.
+MONEY_COLUMNS = (
+    "donation_amount_in_donation_currency",
+    "donation_amount_in_project_currency_may_be_approx",
+    "total_online_donation_gross_amount_in_settled_currency",
+    "total_processing_fees_paid_by_cc_in_settled_currency",
+    "total_online_donations_net_amount_in_settled_currency",
+    "zakat_amount_in_donation_currency",
+)
+
+
+def coerce_money_columns(row: dict) -> dict:
+    """Turns the money columns' text into decimals, in place. Blank cells and
+    anything that isn't a plain number are left exactly as they came."""
+    for key in MONEY_COLUMNS:
+        value = row.get(key)
+        if isinstance(value, str) and value.strip():
+            try:
+                row[key] = float(value)
+            except ValueError:
+                pass
+    return row
+
+
 @task
 def read_donations_export(path: str | Path) -> list[dict]:
     with open(path, newline="") as f:
         reader = csv.DictReader(f)
         rows = [
-            {_sanitize_column_name(key): value for key, value in row.items()}
+            coerce_money_columns(
+                {_sanitize_column_name(key): value for key, value in row.items()}
+            )
             for row in reader
         ]
     return rows
