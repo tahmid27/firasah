@@ -58,9 +58,33 @@ def _refresh_runs(c: Charity, end: date, seed: int) -> Batch:
     )
 
 
+def _shift_stamps(batches: list[Batch], pulled_at: datetime, delta: timedelta) -> None:
+    """Move every pull timestamp by the same amount, so the latest pull lands at
+    `pulled_at` and every earlier pull keeps its distance from it."""
+    for b in batches:
+        if b.table == "raw_refresh_runs":
+            # The run log is written as the runs finish, not an hour later
+            b.ingested_at = pulled_at
+            for row in b.rows:
+                for key in ("started_at", "finished_at"):
+                    row[key] = (datetime.fromisoformat(row[key]) + delta).isoformat()
+            continue
+        if b.ingested_at:
+            b.ingested_at += delta
+        if b.row_ingested_at:
+            b.row_ingested_at = [t + delta for t in b.row_ingested_at]
+
+
 def generate(
-    c: Charity, end: date, seed: int, out_dir: Path, years: int = YEARS
+    c: Charity,
+    end: date,
+    seed: int,
+    out_dir: Path,
+    years: int = YEARS,
+    pulled_at: datetime | None = None,
 ) -> Generated:
+    """`pulled_at` is when the latest pull happened. Left out, the latest pull is
+    stamped 06:00 UTC on `end`, the same every time, which keeps tests exact."""
     start = end - timedelta(days=365 * years)
     pulled = datetime.combine(end, time(6), tzinfo=UTC)
 
@@ -85,6 +109,9 @@ def generate(
         batches += social.tiktok_batches(c, posts["tiktok"], start, end, seed)
     batches += mailchimp.batches(c, emails, start, end, seed)
     batches.append(_refresh_runs(c, end, seed))
+    if pulled_at is not None:
+        usual = datetime.combine(end, time(6), tzinfo=UTC)
+        _shift_stamps(batches, pulled_at, pulled_at - usual)
     return Generated(
         charity=c,
         batches=batches,

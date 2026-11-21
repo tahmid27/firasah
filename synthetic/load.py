@@ -145,10 +145,9 @@ def demo_logins() -> None:
 def data_end_date(now: datetime) -> date:
     """The last day the demo data covers.
 
-    The generator stamps its latest pull at 06:00 UTC on that day (and the run
-    log at 07:00), so using today keeps Data health "Up to date" for the next
-    30 hours after a reload. Before 07:00 UTC today's stamps would be in the
-    future, so it falls back to yesterday.
+    Today from 07:00 UTC, yesterday before that. (When no pull time is given the
+    generator stamps its latest pull at 06:00 UTC on this day, so 07:00 is the
+    first moment that stamp is safely in the past.)
     """
     today = now.date()
     return today if now.hour >= 7 else today - timedelta(days=1)
@@ -171,8 +170,14 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    end = data_end_date(datetime.now(UTC))
-    generated = [generate(c, end, args.seed, OUT_DIR) for c in CHARITIES]
+    now = datetime.now(UTC)
+    end = data_end_date(now)
+    # Stamp the latest pull with the real time of this run, so "latest data" is
+    # only old when no run has happened, not whenever a run is late.
+    pulled_at = now.replace(second=0, microsecond=0)
+    generated = [
+        generate(c, end, args.seed, OUT_DIR, pulled_at=pulled_at) for c in CHARITIES
+    ]
     for g in generated:
         print(
             f"[synthetic] {g.charity.name}: {g.donations:,} donations, {g.posts:,} posts, {g.emails} emails"
