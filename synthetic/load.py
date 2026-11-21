@@ -24,7 +24,8 @@ from synthetic.generate import generate
 DATASET = "firasah_synthetic"
 LOCATION = "europe-west2"
 OUT_DIR = Path("data/synthetic")
-DBT = ["uv", "run", "dbt"]
+# The job image has dbt on its PATH and no uv, so the command is configurable
+DBT = os.environ.get("FIRASAH_DBT", "uv run dbt").split()
 DBT_ARGS = [
     "--target",
     "synthetic",

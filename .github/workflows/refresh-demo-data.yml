@@ -1,19 +1,12 @@
-# Rebuilds the synthetic demo dataset every morning so the live demo is never
-# "Out of date". Keyless Google sign-in as a refresh account that can write only
-# to the synthetic dataset.
+# MANUAL FALLBACK. The daily refresh of the synthetic demo dataset is a Cloud
+# Run Job (firasah-demo-refresh) started by Cloud Scheduler. This workflow runs
+# the same load from GitHub, only when someone starts it by hand, with keyless
+# Google sign-in as the refresh account.
 #
-# DEMO-ONLY SHORTCUT: real charities need a hosted Cloud Run Job on Cloud
-# Scheduler, not a GitHub schedule. See "MUST FIX BEFORE ONBOARDING REAL
-# CLIENTS" in CLAUDE.local.md.
-name: Refresh demo data
+# Never run it while the job is running: two loads into one dataset collide.
+name: Refresh demo data (manual)
 
 on:
-  schedule:
-    # GitHub's scheduler is best-effort: runs can start hours late or not at
-    # all. So there are several attempts a day, and an attempt does nothing if
-    # the data is already fresh. All are after 07:00 UTC, when the generator
-    # treats "today" as a finished day.
-    - cron: "17 7,10,13,16 * * *"
   workflow_dispatch:
 
 permissions:
@@ -53,39 +46,11 @@ jobs:
           workload_identity_provider: projects/647234305259/locations/global/workloadIdentityPools/github/providers/github-oidc
           service_account: firasah-refresh@firasah-dev-511916.iam.gserviceaccount.com
 
-      # Scheduled attempts skip when a recent run already refreshed the data;
-      # a manual run always goes ahead.
-      - name: Skip if the data is already fresh
-        id: guard
-        if: github.event_name == 'schedule'
-        run: |
-          uv run python - <<'PY' | tee -a "$GITHUB_OUTPUT"
-          import sys
-          from datetime import UTC, datetime, timedelta
-          from google.cloud import bigquery
-
-          fresh = False
-          try:
-              row = list(bigquery.Client().query(
-                  "select min(last_data_at) as oldest "
-                  "from `firasah-dev-511916.firasah_synthetic.fct_source_status`"
-              ).result())[0]
-              age = datetime.now(UTC) - row.oldest
-              fresh = age < timedelta(hours=18)
-              print(f"data is {age} old", file=sys.stderr)
-          except Exception as e:  # no table yet, or anything odd: just refresh
-              print(f"could not check freshness ({type(e).__name__}); refreshing",
-                    file=sys.stderr)
-          print(f"fresh={str(fresh).lower()}")
-          PY
-
       # Keeps yesterday's dashboard tables in place until dbt rebuilds them
       - name: Regenerate, load and rebuild the synthetic dataset
-        if: steps.guard.outputs.fresh != 'true'
         run: uv run python -m synthetic.load --skip-supabase --keep-marts
 
       - name: Check the data is fresh
-        if: steps.guard.outputs.fresh != 'true'
         run: |
           uv run python - <<'PY'
           from datetime import date, timedelta

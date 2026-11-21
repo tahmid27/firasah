@@ -59,6 +59,16 @@ jobs:
       - name: Deploy the website
         run: gcloud run deploy firasah-web --image "$REGISTRY/web:$SHA" --region "$WEB_REGION" --project "$PROJECT"
 
+      # The daily demo-data job (a Cloud Run Job started by Cloud Scheduler)
+      # runs the same code, so it is rebuilt on every deploy
+      - name: Build and push the demo-data job image
+        run: >
+          gcloud builds submit . --config cloudbuild.refresh.yaml --project "$PROJECT"
+          --substitutions "_IMAGE=$REGISTRY/refresh:$SHA"
+
+      - name: Update the demo-data job
+        run: gcloud run jobs update firasah-demo-refresh --image "$REGISTRY/refresh:$SHA" --region "$REGION" --project "$PROJECT"
+
       - name: Smoke test
         run: |
           api=$(gcloud run services describe firasah-api --region "$REGION" --project "$PROJECT" --format='value(status.url)')
