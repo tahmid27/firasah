@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { Brand } from "@/components/brand";
 
@@ -23,6 +24,15 @@ export default function LoginPage() {
           <span className="h-px flex-1 bg-border" />
         </div>
         <DemoButton />
+        <p className="mt-6 text-center text-xs text-ink-2">
+          <Link href="/privacy" className="underline">
+            Privacy
+          </Link>
+          {" · "}
+          <Link href="/terms" className="underline">
+            Terms
+          </Link>
+        </p>
       </div>
     </main>
   );
