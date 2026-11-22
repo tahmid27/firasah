@@ -6,7 +6,7 @@ A fuller, private decision log is kept outside the repo. This file holds only th
 
 ## Stack
 
-Python 3.12 (managed by `uv`) · FastAPI · dbt (BigQuery) · Prefect · Supabase (auth, Postgres row-level security) · Next.js 16 + Recharts · GitHub Actions. Planned: Docker, GCP Cloud Run, Stripe.
+Python 3.12 (managed by `uv`) · FastAPI · dbt (BigQuery) · Prefect · Supabase (auth, Postgres row-level security) · Next.js 16 + Recharts · Docker · GCP Cloud Run · GitHub Actions. Planned: Stripe.
 
 ## Commands
 
@@ -47,5 +47,5 @@ Python 3.12 (managed by `uv`) · FastAPI · dbt (BigQuery) · Prefect · Supabas
 4. Backend API with tenant isolation: done
 5. Dashboard frontend: done
 6. Billing and subscription tiers (Stripe): not started
-7. Deployment (Docker, Cloud Run, CI/CD, monitoring, first beta charity): not started
+7. Deployment (Docker, Cloud Run, CI/CD, monitoring, domain): done; first beta charity: not started
 8. Agentic layer (weekly reports, campaign chase-ups): not started

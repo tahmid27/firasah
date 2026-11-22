@@ -19,7 +19,9 @@ Firasah pulls those sources into one warehouse on a schedule, models them into t
 | Social | Instagram (Graph API), TikTok (Content API) |
 | Email | Mailchimp (API) |
 
-Built solo, end to end: connectors, warehouse modelling, a secured API, and the dashboard. The emphasis is on the data platform: connector design, modelling, testing, tenant isolation, and decisions that can be defended.
+Built solo, end to end: connectors, warehouse modelling, a secured API, the dashboard, and the cloud deployment. The emphasis is on the data platform: connector design, modelling, testing, tenant isolation, and decisions that can be defended.
+
+**Live demo: [firasah.uk](https://firasah.uk)**. Click "Click here for demo" on the login page to sign in as a fictional charity (synthetic data only, refreshed every day).
 
 ## At a glance
 
@@ -27,7 +29,8 @@ Built solo, end to end: connectors, warehouse modelling, a secured API, and the 
 - **33 dbt models** (staging → snapshot → intermediate → marts) and **134 dbt tests**, including a custom multi-tenant uniqueness test
 - **FastAPI** service with **28 endpoints**, Supabase JWT auth and strict per-charity data isolation
 - **Next.js + Recharts** dashboard: 6 pages, about 34 visuals, light and dark themes, usable down to phone width
-- **266 pytest tests** plus a live isolation check that creates a second tenant and tries to read the first
+- **Deployed on GCP**: API and website on Cloud Run, a daily Cloud Run Job (triggered by Cloud Scheduler) that regenerates the demo data, keyless GitHub Actions deploys on every push to `main` (Workload Identity Federation), uptime and error alerts, custom domain with HTTPS
+- **282 pytest tests** plus a live isolation check that creates a second tenant and tries to read the first
 - A **synthetic data generator** for three fake charities (about 108,000 donations over three years) that runs through the real connectors' parsing code and every dbt model
 
 ## Screenshots
@@ -130,6 +133,18 @@ The generator models Ramadan, Eid and the last ten nights, Giving Tuesday, payda
 - **A route guard with a blind spot.** After a framework upgrade, the test that checked every route had auth silently stopped seeing routes inside routers. It now also checks that the routes it walks equal the OpenAPI spec exactly, and calls every endpoint anonymously expecting a 401.
 - **Metrics that look wrong if you aren't told why.** Instagram keeps post insights for two years, so an old post with lifetime likes but recent-only reach showed a 900% engagement rate; it is now withheld. Mailchimp opens are tracked by an image pixel, so junk-folder reads are undercounted while Apple Mail's pre-loading overcounts: clicks are the trustworthy signal, and the dashboard says so.
 
+## Deployment
+
+| Piece | Where it runs |
+| --- | --- |
+| Website (Next.js, standalone Docker image) | Cloud Run, served at firasah.uk |
+| API (FastAPI) | Cloud Run, as its own service account that can read only the demo dataset |
+| Daily demo-data refresh | Cloud Run Job started by Cloud Scheduler; the dashboard tables stay in place until dbt replaces them, so the demo never goes empty |
+| Deploys | GitHub Actions: after CI passes on `main`, builds images with Cloud Build, deploys, smoke-tests. Signs in to GCP without a stored key; only this repo's `main` branch is trusted |
+| Monitoring | Cloud Monitoring uptime checks, alerts on downtime, 5xx errors and failed refresh runs |
+
+The demo job runs the synthetic generator, not real ingestion. Real charities need per-charity credentials in Secret Manager, which is the main piece left before onboarding one.
+
 ## Running it
 
 Requires Python 3.12 managed by [uv](https://docs.astral.sh/uv/), a GCP project with BigQuery, and API credentials for whichever sources you want.
@@ -169,12 +184,12 @@ Checks (the same ones CI runs on every push, see `.github/workflows/ci.yml`):
 ```bash
 uv run ruff check .          # lint
 uv run ruff format --check . # formatting
-uv run pytest                # 266 tests: ingestion helpers, auth attacks, tenant isolation, endpoint maths, synthetic data
+uv run pytest                # 282 tests: ingestion helpers, auth attacks, tenant isolation, endpoint maths, synthetic data
 uv run dbt parse --project-dir dbt --profiles-dir ci   # dbt project compiles, no warehouse needed
 cd web && npm run lint && npm run typecheck && npm run build   # frontend
 ```
 
-CI deliberately needs no secrets: unit tests use a fake HTTP transport and a fake warehouse instead of real services, and `dbt parse` never connects to BigQuery. Running the full `dbt build` in CI is a planned step (it needs a keyless GCP login via Workload Identity Federation).
+CI deliberately needs no secrets: unit tests use a fake HTTP transport and a fake warehouse instead of real services, and `dbt parse` never connects to BigQuery. The daily Cloud Run job runs `dbt snapshot`, `run` and `test` against the demo dataset.
 
 One failing source doesn't stop the others: each connector is isolated, dbt runs on whatever landed, and the flow fails at the end naming the sources that broke. LaunchGood is only loaded when its export file has changed.
 
@@ -199,12 +214,13 @@ CLAUDE.md     conventions, commands and architecture rules for coding agents and
 - **Done:** ingestion for all five sources, the modelling layers, dbt tests and docs, scheduled refresh.
 - **Done:** FastAPI layer with per-charity data isolation, Supabase auth, synthetic multi-charity data.
 - **Done:** the dashboard: Overview, Fundraising, Social, Email, Appeals and Data health pages, with loading, empty and error states.
-- **Next:** deployment (Docker, GCP Cloud Run), then billing tiers.
-- **Known limitations:** ingestion credentials are still single-charity (the data model and API are multi-charity); no currency conversion (the dashboard sums GBP only and reports how many other-currency donations it left out); LaunchGood refunds aren't detected; growth charts only have history from the first pull onwards; scheduling runs locally until deployment.
+- **Done:** deployment: Docker, Cloud Run, CI/CD, monitoring, custom domain, daily demo-data refresh.
+- **Next:** onboarding a first real charity (per-charity credentials, real ingestion on a schedule), a LaunchGood upload page, then billing tiers.
+- **Known limitations:** ingestion credentials are still single-charity (the data model and API are multi-charity); no currency conversion (the dashboard sums GBP only and reports how many other-currency donations it left out); LaunchGood refunds aren't detected; growth charts only have history from the first pull onwards; the demo data is regenerated nightly, so its history shifts slightly between visits.
 
 ## Stack
 
-Python · FastAPI · dbt · Prefect · BigQuery · Supabase (auth) · Next.js · Recharts · GitHub Actions. Planned: Docker · GCP Cloud Run · Stripe.
+Python · FastAPI · dbt · Prefect · BigQuery · Supabase (auth) · Next.js · Recharts · Docker · GCP (Cloud Run, Cloud Build, Cloud Scheduler, Secret Manager, Monitoring) · GitHub Actions. Planned: Stripe.
 
 ## Licence
 
