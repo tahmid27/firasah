@@ -13,7 +13,7 @@ export const PRESETS = [
 ] as const;
 
 export type PresetKey = (typeof PRESETS)[number]["key"];
-export const DEFAULT_PRESET: PresetKey = "12m";
+export const DEFAULT_PRESET: PresetKey = "30d";
 export const RANGE_PARAMS = ["range", "from", "to"] as const;
 
 export type DateRange = {

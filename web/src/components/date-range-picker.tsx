@@ -68,7 +68,7 @@ export function DateRangePicker({
         <div
           role="dialog"
           aria-label="Choose date range"
-          className="absolute right-0 z-10 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-surface p-1 shadow-lg"
+          className="absolute left-0 z-10 mt-2 sm:left-auto sm:right-0 w-72 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-surface p-1 shadow-lg"
         >
           <ul>
             {PRESETS.map((p) => {
