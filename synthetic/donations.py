@@ -251,8 +251,13 @@ def _amount(
         return float(r.choice((1, 2, 3, 5, 5, 10)))
     if zakat:
         return round(r.lognormvariate(math.log(220), 0.8))
-    if r.random() < (0.003 if c.yearly_donations > 5_000 else 0.0005):
-        return float(r.choice((500, 750, 1_000, 2_000, 5_000)))  # occasional major gift
+    # Occasional major gift, to the charity's own pages only: one landing on a
+    # supporter's £1,000 page would put it at 500% of its target
+    supporter_page = f.owner not in (None, c.name)
+    if r.random() < (0.003 if c.yearly_donations > 5_000 else 0.0005) and not (
+        supporter_page
+    ):
+        return float(r.choice((500, 750, 1_000, 2_000, 5_000)))
     if f.season == "event":
         return float(weighted(r, {5: 2, 10: 5, 15: 2, 20: 4, 25: 2, 30: 1, 50: 1}))
     if r.random() < 0.7:
@@ -290,7 +295,7 @@ def donations_for(
     # caps don't shift anything else that's generated.
     cap_r = rng(seed, c.org_id, platform, "page-caps")
     caps = {
-        f: f.target * cap_r.lognormvariate(0.1, 0.3)
+        f: f.target * min(cap_r.lognormvariate(0.1, 0.3), 1.6)
         for project in c.projects[platform]
         for f in project.fundraisers
         if f.target and f.owner not in (None, c.name)
@@ -327,6 +332,10 @@ def donations_for(
         ):
             nightly_donors = [pool.new() for _ in range(max(3, int(yearly / 120)))]
         for _ in range(count):
+            # A page closes as soon as it reaches its cap, not at the end of the day
+            active = [a for a in active if open_(a[1])]
+            if not active:
+                break
             project, fundraiser, _w = r.choices(active, weights=[a[2] for a in active])[
                 0
             ]

@@ -244,7 +244,7 @@ def test_justgiving_pages_end_near_their_targets(generated):
             assert 0.7 <= raised / target <= 1.4, page["title"]
         else:
             # A supporter's page stops collecting near its target
-            assert raised <= 3 * target, page["title"]
+            assert raised <= 1.8 * target, page["title"]
 
 
 def test_audience_series_lands_on_its_counts_and_has_dips():
