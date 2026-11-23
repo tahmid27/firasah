@@ -17,7 +17,16 @@ from synthetic.rand import rng
 HEADER = json.loads((Path(__file__).parent / "reference_shapes.json").read_text())[
     "launchgood_export_csv_header"
 ]["columns"]
-IMPACT = {"Wells": "SO", "Qurbani": "PK", "Iftar": "PS", "Zakat": "YE", "Orphan": "BD"}
+IMPACT = {
+    "Wells": "SO",
+    "Qurbani": "PK",
+    "Iftar": "PS",
+    "Zakat": "YE",
+    "Orphan": "BD",
+    "Shelter": "TR",
+    "Filters": "KE",
+    "Hygiene": "SD",
+}
 
 
 def _impact(project_name: str) -> str:

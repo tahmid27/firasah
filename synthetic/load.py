@@ -1,4 +1,4 @@
-"""Wipe and rebuild the synthetic dataset: generate raw data for the three
+"""Wipe and rebuild the synthetic dataset: generate raw data for the four
 demo charities, load it through the real loader, build dbt into the
 `synthetic` target, and set up one demo login per charity.
 

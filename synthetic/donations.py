@@ -85,6 +85,14 @@ LG_COMMENTS = (
     "For the sake of Allah",
     "Sadaqah for my family",
 )
+LG_COMMENTS_GENERAL = (
+    "For my family, with love",
+    "In memory of my grandad",
+    "Clean water for everyone",
+    "Keep up the amazing work",
+    "Thinking of everyone affected",
+    "Happy to help",
+)
 LG_TRAFFIC = {
     "internal_comm_page": 0.35,
     "campaign_page": 0.25,
@@ -171,7 +179,7 @@ def _day_multiplier(c: Charity, platform: str, day: date, progress: float) -> fl
         m *= 1 + (c.ramadan_lift - 1) * strength
         if calendar.in_last_ten_nights(day):
             m *= 1 + (c.last_ten_nights_lift / c.ramadan_lift - 1) * strength
-        if calendar.is_27th_night(day):
+        if c.ramadan_giving and calendar.is_27th_night(day):
             m *= 1 + 0.8 * strength
     if calendar.in_dhul_hijjah_ten(day):
         m *= 1 + (c.dhul_hijjah_lift - 1) * strength
@@ -188,13 +196,13 @@ def _day_multiplier(c: Charity, platform: str, day: date, progress: float) -> fl
     return m
 
 
-def _hour(r: random.Random, day: date) -> int:
+def _hour(r: random.Random, day: date, ramadan_giving: bool = True) -> int:
     weights = {h: 1.0 for h in range(24)}
     for h in range(7):
         weights[h] = 0.15
     for h, w in {12: 2.0, 13: 2.0, 19: 2.5, 20: 3.0, 21: 3.0, 22: 2.0, 23: 1.0}.items():
         weights[h] = w
-    if calendar.in_ramadan(day):
+    if ramadan_giving and calendar.in_ramadan(day):
         for h, w in {3: 1.5, 4: 2.0, 5: 1.2, 21: 4.0, 22: 4.0, 23: 3.0, 0: 1.5}.items():
             weights[h] = w  # suhoor and after taraweeh
     return weighted(r, weights)
@@ -312,7 +320,8 @@ def donations_for(
         if not active:
             continue
         if (
-            calendar.in_last_ten_nights(day)
+            c.ramadan_giving
+            and calendar.in_last_ten_nights(day)
             and platform == "launchgood"
             and not nightly_donors
         ):
@@ -322,7 +331,8 @@ def donations_for(
                 0
             ]
             nightly = (
-                platform == "launchgood"
+                c.ramadan_giving
+                and platform == "launchgood"
                 and calendar.in_last_ten_nights(day)
                 and r.random() < 0.3
             )
@@ -335,7 +345,7 @@ def donations_for(
             is_zakat = (
                 platform == "launchgood" and not nightly and r.random() < zakat_chance
             )
-            hour = 22 if nightly else _hour(r, day)
+            hour = 22 if nightly else _hour(r, day, c.ramadan_giving)
             amount = _amount(r, c, fundraiser, is_zakat, nightly)
             raised[fundraiser] = raised.get(fundraiser, 0.0) + amount
             donations.append(
@@ -361,7 +371,11 @@ def donations_for(
                     ),
                     message=(
                         r.choice(
-                            JG_MESSAGES if platform == "justgiving" else LG_COMMENTS
+                            JG_MESSAGES
+                            if platform == "justgiving"
+                            else LG_COMMENTS
+                            if c.ramadan_giving
+                            else LG_COMMENTS_GENERAL
                         )
                         if r.random() < (0.3 if platform == "justgiving" else 0.15)
                         else ""

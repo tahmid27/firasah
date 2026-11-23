@@ -55,6 +55,7 @@ for _ in $(seq 1 60); do
     Al-Noor Community Trust   demo-small@example.com   demo-small
     Brightwater Foundation    demo-medium@example.com  demo-medium
     Unity Relief              demo-large@example.com   demo-large
+    Clearwater Relief         demo-clearwater@example.com  demo-clearwater
 
   Press Ctrl+C to stop.
 

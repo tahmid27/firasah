@@ -2,6 +2,7 @@
 patterns are there."""
 
 import json
+import re
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -99,7 +100,7 @@ def test_records_have_exactly_the_real_apis_field_names(generated):
 
 
 def test_launchgood_export_has_the_real_header(generated):
-    for org in ("demo_small", "demo_large"):
+    for org in ("demo_small", "demo_large", "demo_clearwater"):
         files = [
             b for b in generated[org].batches if b.table == "raw_launchgood_donations"
         ]
@@ -134,6 +135,7 @@ def test_non_gbp_donations_only_for_medium_and_large(generated):
     assert set(currencies("demo_small")) == {"GBP"}
     assert set(currencies("demo_medium")) - {"GBP"}
     assert set(currencies("demo_large")) - {"GBP"}
+    assert set(currencies("demo_clearwater")) - {"GBP"}
 
 
 def test_refunded_donations_vanish_from_the_second_pull(generated):
@@ -168,6 +170,51 @@ def test_al_noor_gives_far_more_in_ramadan(tmp_path):
     days = [date.fromisoformat(r["created_date_utc"]) for r in export.rows]
     share = sum(calendar.in_ramadan(d) for d in days) / len(days)
     assert share > 0.2  # Ramadan is about 8% of the year
+
+
+FAITH_WORDS = (
+    "ramadan",
+    "zakat",
+    "eid",
+    "qurbani",
+    "iftar",
+    "sadaqah",
+    "allah",
+    "dua",
+    "laylat",
+    "masjid",
+    "mosque",
+    "jazakallah",
+)
+
+
+def _faith_words(value) -> set[str]:
+    """Faith-specific words in a record's values (not its field names)."""
+    if isinstance(value, dict):
+        return set().union(*map(_faith_words, value.values()))
+    if isinstance(value, list):
+        return set().union(*map(_faith_words, value))
+    if isinstance(value, str):
+        return set(re.findall(r"[a-z]+", value.lower())) & set(FAITH_WORDS)
+    return set()
+
+
+def test_clearwater_is_a_general_charity(tmp_path):
+    from synthetic.charities import CLEARWATER
+
+    g = generate(CLEARWATER, END, seed=5, out_dir=tmp_path, years=3)
+    export = next(
+        b
+        for b in g.batches
+        if b.table == "raw_launchgood_donations"
+        and b.tags["_source_file"] == "launchgood_export.csv"
+    )
+    assert all(r["zakat_yes_or_no"] == "no" for r in export.rows)
+    days = [date.fromisoformat(r["created_date_utc"]) for r in export.rows]
+    share = sum(calendar.in_ramadan(d) for d in days) / len(days)
+    assert share < 0.12  # no Ramadan peak (Ramadan is about 8% of the year)
+
+    assert _faith_words([b.rows for b in g.batches]) == set()
 
 
 def test_fake_people_use_example_addresses_only(generated):

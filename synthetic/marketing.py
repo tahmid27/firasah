@@ -149,7 +149,11 @@ def _appeal_days(
     if charity.emergency_day:
         emergency = date.fromisoformat(charity.emergency_day)
         days += [
-            (emergency, "Emergency appeal", "URGENT: earthquake emergency appeal"),
+            (
+                emergency,
+                "Emergency appeal",
+                f"URGENT: {charity.emergency_kind} emergency appeal",
+            ),
             (
                 emergency + timedelta(days=3),
                 "Emergency appeal update",
@@ -170,6 +174,9 @@ def _appeal_days(
                     "Keep a Sparkbrook family warm this winter",
                 )
             )
+    for month, day_of_month, title, subject in charity.yearly_appeals:
+        for year in range(start.year, end.year + 1):
+            days.append((date(year, month, day_of_month), title, subject))
     # One email per day at most; keep those inside the window
     unique = {}
     for day, title, subject in days:

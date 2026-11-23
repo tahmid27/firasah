@@ -1,4 +1,4 @@
-"""The three demo charities. Internal org IDs are stable; display names are for the UI."""
+"""The four demo charities. Internal org IDs are stable; display names are for the UI."""
 
 from dataclasses import dataclass, field
 
@@ -47,6 +47,11 @@ class Charity:
     handle: str
     links: tuple[str, ...] = field(default=())
     emergency_day: str | None = None  # start of a one-off emergency appeal
+    emergency_kind: str = "earthquake"
+    # Ramadan timing patterns (27th night, suhoor hours, nightly giving)
+    ramadan_giving: bool = True
+    # (month, day, title, subject) appeal emails sent every year
+    yearly_appeals: tuple[tuple[int, int, str, str], ...] = ()
 
 
 AL_NOOR = Charity(
@@ -396,4 +401,205 @@ UNITY = Charity(
     ),
 )
 
-CHARITIES = (AL_NOOR, BRIGHTWATER, UNITY)
+# Same scale as Unity Relief, with general (not faith-specific) causes and
+# seasons. The public demo button signs in as this one.
+CLEARWATER = Charity(
+    org_id="demo_clearwater",
+    name="Clearwater Relief",
+    city="Manchester",
+    yearly_donations=25_000,
+    donation_platforms={"justgiving": 0.65, "launchgood": 0.35},
+    projects={
+        "justgiving": (
+            Project(
+                "Clearwater Where Most Needed",
+                (
+                    Fundraiser(
+                        "Clearwater Relief: Where Most Needed",
+                        0,
+                        3,
+                        "Clearwater Relief",
+                    ),
+                    Fundraiser(
+                        "Monthly givers: Clearwater Relief",
+                        0,
+                        1,
+                        "Clearwater Relief",
+                    ),
+                ),
+                weight=2,
+            ),
+            Project(
+                "Clearwater Flood Emergency Response",
+                (
+                    Fundraiser(
+                        "Clearwater Flood Emergency Appeal",
+                        120_000,
+                        5,
+                        "Clearwater Relief",
+                        season="emergency",
+                    ),
+                    Fundraiser(
+                        "Stockport Rotary flood appeal",
+                        15_000,
+                        1.5,
+                        "Graham Whitfield",
+                        season="emergency",
+                    ),
+                    Fundraiser(
+                        "Chloe's sponsored 24-hour silence",
+                        500,
+                        0.3,
+                        "Chloe Barker",
+                        season="emergency",
+                    ),
+                ),
+                weight=3,
+            ),
+            Project(
+                "Clearwater Winter Shelter Appeal",
+                (
+                    Fundraiser(
+                        "Clearwater Winter Shelter Appeal",
+                        70_000,
+                        3,
+                        "Clearwater Relief",
+                        season="winter",
+                    ),
+                    Fundraiser(
+                        "Manchester Big Sleep Out",
+                        6_000,
+                        1.2,
+                        "Ryan O'Connor",
+                        season="winter",
+                    ),
+                ),
+                weight=2,
+            ),
+            Project(
+                "Clearwater Manchester Half Marathon",
+                (
+                    Fundraiser(
+                        "Team Clearwater Manchester Half 2025",
+                        12_000,
+                        2,
+                        "Clearwater Relief",
+                        "2025-10-12",
+                        season="event",
+                    ),
+                    Fundraiser(
+                        "Becky runs 13.1 miles for clean water",
+                        1_000,
+                        0.7,
+                        "Rebecca Lewis",
+                        "2025-10-12",
+                        season="event",
+                    ),
+                    Fundraiser(
+                        "Mark's Manchester Half 2024",
+                        750,
+                        0.5,
+                        "Mark Turner",
+                        "2024-10-13",
+                        season="event",
+                    ),
+                    Fundraiser(
+                        "Office team takes on the Half",
+                        2_500,
+                        0.8,
+                        "Priya Desai",
+                        "2026-10-11",
+                        season="event",
+                    ),
+                ),
+                weight=1.5,
+            ),
+            Project(
+                "Clearwater Christmas Appeal",
+                (
+                    Fundraiser(
+                        "Clearwater Christmas Appeal",
+                        40_000,
+                        2,
+                        "Clearwater Relief",
+                        season="december",
+                    ),
+                ),
+                weight=1.5,
+            ),
+        ),
+        "launchgood": (
+            Project(
+                "Clearwater Clean Water Wells",
+                (
+                    Fundraiser("Build a Clean Water Well", weight=2),
+                    Fundraiser("Wells for Village Schools", weight=1),
+                ),
+                weight=3,
+            ),
+            Project(
+                "Clearwater Emergency Shelter Kits",
+                (
+                    Fundraiser("Send a Family Shelter Kit", weight=2),
+                    Fundraiser(
+                        "Winter Tents and Blankets", weight=1.5, season="winter"
+                    ),
+                ),
+                weight=2.5,
+            ),
+            Project(
+                "Clearwater Household Water Filters",
+                (Fundraiser("Give a Family Clean Water", weight=1),),
+                weight=1.5,
+            ),
+            Project(
+                "Clearwater Hygiene Kits",
+                (Fundraiser("Hygiene Kits for Displaced Families", weight=1),),
+                weight=1,
+            ),
+        ),
+    },
+    social=("instagram", "tiktok"),
+    followers={"instagram": (12_000, 38_000), "tiktok": (3_000, 22_000)},
+    subscribers=(10_000, 28_000),
+    posts_per_week={"instagram": 5.0, "tiktok": 3.0},
+    newsletters_per_month=3,
+    ramadan_lift=1.0,
+    last_ten_nights_lift=1.0,
+    dhul_hijjah_lift=1.0,
+    december_lift=1.9,
+    gift_aid_rate=0.6,
+    muslim_donor_share=0.2,
+    non_gbp_donations=4,
+    cities=(
+        "Manchester",
+        "London",
+        "Leeds",
+        "Liverpool",
+        "Sheffield",
+        "Birmingham",
+        "Nottingham",
+        "Glasgow",
+    ),
+    handle="clearwaterrelief",
+    emergency_day="2025-08-18",
+    emergency_kind="flood",
+    ramadan_giving=False,
+    yearly_appeals=(
+        (
+            3,
+            22,
+            "World Water Day",
+            "It's World Water Day: £25 gives a family clean water",
+        ),
+        (11, 3, "Winter Shelter appeal", "Winter is coming. Help a family stay warm"),
+    ),
+    links=(
+        "Donate now",
+        "Give a family clean water",
+        "Watch the appeal video",
+        "Read the field report",
+    ),
+)
+
+CHARITIES = (AL_NOOR, BRIGHTWATER, UNITY, CLEARWATER)
