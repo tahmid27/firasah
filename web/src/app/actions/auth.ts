@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { signInToDemo } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
 
 export type LoginState = { error: string | null; email: string };
@@ -27,18 +28,8 @@ export async function signIn(
 
 export type DemoState = { error: string | null };
 
-// Signs in as the public demo charity. The credentials live in server-only
-// environment variables and never reach the browser.
 export async function signInAsDemo(): Promise<DemoState> {
-  const email = process.env.FIRASAH_DEMO_EMAIL;
-  const password = process.env.FIRASAH_DEMO_PASSWORD;
-  if (!email || !password) {
-    return { error: "The demo isn't available right now." };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
+  if (!(await signInToDemo())) {
     return { error: "The demo isn't available right now." };
   }
   redirect("/");

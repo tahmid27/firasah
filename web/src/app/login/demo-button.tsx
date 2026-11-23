@@ -22,8 +22,8 @@ export function DemoButton() {
         {pending ? "Opening the demo…" : "Click here for demo"}
       </button>
       <p className="text-center text-xs text-ink-2">
-        Explore Unity Relief, a fictional charity with made-up data. No sign-up
-        needed.
+        Explore Clearwater Relief, a fictional charity with made-up data. No
+        sign-up needed.
       </p>
       {state.error && (
         <p role="alert" className="text-center text-sm text-danger">

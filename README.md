@@ -21,7 +21,7 @@ Firasah pulls those sources into one warehouse on a schedule, models them into t
 
 Built solo, end to end: connectors, warehouse modelling, a secured API, the dashboard, and the cloud deployment. The emphasis is on the data platform: connector design, modelling, testing, tenant isolation, and decisions that can be defended.
 
-**Live demo: [firasah.uk](https://firasah.uk)**. Click "Click here for demo" on the login page to sign in as a fictional charity (synthetic data only, refreshed every day).
+**Live demo: [firasah.uk/demo](https://firasah.uk/demo)** opens the dashboard straight away, signed in as Clearwater Relief, a fictional charity (synthetic data only, refreshed every day). The login page's "Click here for demo" button does the same.
 
 ## At a glance
 

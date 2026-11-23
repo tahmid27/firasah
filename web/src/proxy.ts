@@ -2,8 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login"];
-// Readable signed in or out, with no redirect either way
-const OPEN_PATHS = ["/privacy", "/terms"];
+// Reachable signed in or out, with no redirect either way
+const OPEN_PATHS = ["/privacy", "/terms", "/demo"];
 
 // Refreshes the Supabase session cookie and redirects by login state. This is
 // a convenience, not the security boundary: the API verifies every token and
